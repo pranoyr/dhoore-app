@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "example-app",
-    "slug": "example-app",
+    "name": "dhoore-app",
+    "slug": "dhoore-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
