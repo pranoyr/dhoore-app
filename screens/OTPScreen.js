@@ -11,14 +11,15 @@ export default function OTPScreen({ route, navigation }) {
   const handleVerify = async () => {
     try {
       const response = await axios.post('http://localhost:3000/api/verify-otp', { phone: phoneNumber, otp });
-      const { token } = response.data;
+      const { token, refreshToken } = response.data;
       
-      if (token) {
+      if (token && refreshToken) {
         await AsyncStorage.setItem('token', token);
-        navigation.navigate('Dashboard');
+        await AsyncStorage.setItem('refreshToken', refreshToken);
+        navigation.navigate('UserAndVehicleDetails');
       } else {
-        console.error('Token is null or undefined');
-        Alert.alert('Error', 'Failed to receive token, please try again');
+        console.error('Token or refresh token is null or undefined');
+        Alert.alert('Error', 'Failed to receive tokens, please try again');
       }
     } catch (error) {
       console.error('Error verifying OTP:', error);

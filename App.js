@@ -7,6 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import RegistrationScreen from './screens/RegistrationScreen';
 import OTPScreen from './screens/OTPScreen';
 import Dashboard from './screens/Dashboard';
+import ChatScreen from './screens/ChatScreen';
+import UserAndVehicleDetailsScreen from './screens/userDetailsScreen';
 
 const Stack = createStackNavigator();
 
@@ -43,6 +45,8 @@ export default function App() {
         <Stack.Screen name="Registration" component={RegistrationScreen} />
         <Stack.Screen name="OTP" component={OTPScreen} />
         <Stack.Screen name="Dashboard" component={Dashboard} options={{ headerShown: false }} />
+        <Stack.Screen name="UserAndVehicleDetails" component={UserAndVehicleDetailsScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -6,7 +6,7 @@ export default function RegistrationScreen({ navigation }) {
   const [phoneNumber, setPhoneNumber] = useState('');
 
   const handleRegister = async () => {
-    if (phoneNumber.length === 10) {
+    if (phoneNumber.length === 12) {
       try {
         const response = await axios.post('http://localhost:3000/api/send-otp', {
           phone: phoneNumber
