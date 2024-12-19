@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import apiRequest from '../apis/api';
+
 export default function ChatScreen({ navigation, route }) {
   const { selectedVehicle } = route.params || {};
   const [chats, setChats] = useState([]);
@@ -11,26 +13,61 @@ export default function ChatScreen({ navigation, route }) {
   const [newMessage, setNewMessage] = useState('');
   const [emojiModalVisible, setEmojiModalVisible] = useState(false);
 
-  useEffect(() => {
-    // Fetch chats from API or local storage
-    const fetchedChats = [
-      { id: '1', name: 'John Doe', lastMessage: 'Hello there!' },
-      { id: '2', name: 'Jane Smith', lastMessage: 'How are you?' },
-      // Add more chats as needed
-    ];
-    setChats(fetchedChats);
-  }, []);
+  // [
+  //   { recipient_id: 2, name: 'Vysakhan', last_message: 'Hi' },
+  //   { recipient_id: 1, name: 'Rahul', last_message: 'Hi' }
+  // ]
 
-  const sendMessage = () => {
+  // useEffect(() => {
+  //   // Fetch chats from API or local storage
+  //   const fetchedChats = [
+  //     { id: '1', name: 'John Doe', lastMessage: 'Hello there!' },
+  //     { id: '2', name: 'Jane Smith', lastMessage: 'How are you?' },
+  //     // Add more chats as needed
+  //   ];
+  //   setChats(fetchedChats);
+  // }, []);
+
+
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        const fetchedChats = await apiRequest('/api/last-messages', 'GET'); // Assumes apiRequest already returns parsed JSON
+        console.log('Fetched chats:', fetchedChats);
+        setChats(fetchedChats);
+      } catch (error) {
+        console.error('Error fetching chats:', error);
+      }
+    };
+  
+    fetchChats();
+  }, []);
+  
+
+  const sendMessage = async () => {
     if (newMessage.trim().length === 0 || !selectedChat) return;
+
     const updatedMessages = [...messages, { id: messages.length, text: newMessage, sender: 'user' }];
     setMessages(updatedMessages);
     setNewMessage('');
+
     // Update last message in chats list
     const updatedChats = chats.map(chat => 
       chat.id === selectedChat.id ? {...chat, lastMessage: newMessage} : chat
     );
     setChats(updatedChats);
+
+    // Send message to the server using apiRequest
+    try {
+      const response = await apiRequest('/api/send-message-by-id', 'POST', {
+      // sender_id: 'user', // Replace with actual sender ID
+      recipient_id: selectedChat.id,
+      content: newMessage,
+      });
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   const selectEmoji = (emoji) => {
