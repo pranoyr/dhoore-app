@@ -1,2 +1,2 @@
-## Start the app
+## Run App
 npm run ios
