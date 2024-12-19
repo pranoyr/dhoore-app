@@ -28,13 +28,14 @@ export default function UserAndVehicleDetailsScreen({ route, navigation }) {
         userName, userLatitude, userLongitude, userGender, vehicleModel, vehicleNumber, vehicleType
       });
 
+      navigation.navigate('Dashboard');
+
       Alert.alert('Success', 'Details saved successfully');
     } catch (error) {
       console.error('Error:', error);
-      Alert.alert('Error', 'Failed to save details');
+      Alert.alert('Error', 'Duplicate vehicle number. Please try again.');
     }
 
-    navigation.navigate('Dashboard');
   };
 
   return (

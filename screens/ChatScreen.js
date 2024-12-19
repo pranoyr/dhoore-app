@@ -1,18 +1,36 @@
 // ChatScreen.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ChatScreen({ navigation, route }) {
   const { selectedVehicle } = route.params || {};
+  const [chats, setChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [emojiModalVisible, setEmojiModalVisible] = useState(false);
 
+  useEffect(() => {
+    // Fetch chats from API or local storage
+    const fetchedChats = [
+      { id: '1', name: 'John Doe', lastMessage: 'Hello there!' },
+      { id: '2', name: 'Jane Smith', lastMessage: 'How are you?' },
+      // Add more chats as needed
+    ];
+    setChats(fetchedChats);
+  }, []);
+
   const sendMessage = () => {
-    if (newMessage.trim().length === 0) return;
-    setMessages([...messages, { id: messages.length, text: newMessage, sender: 'user' }]);
+    if (newMessage.trim().length === 0 || !selectedChat) return;
+    const updatedMessages = [...messages, { id: messages.length, text: newMessage, sender: 'user' }];
+    setMessages(updatedMessages);
     setNewMessage('');
+    // Update last message in chats list
+    const updatedChats = chats.map(chat => 
+      chat.id === selectedChat.id ? {...chat, lastMessage: newMessage} : chat
+    );
+    setChats(updatedChats);
   };
 
   const selectEmoji = (emoji) => {
@@ -20,7 +38,20 @@ export default function ChatScreen({ navigation, route }) {
     setEmojiModalVisible(false);
   };
 
-  const renderItem = ({ item }) => (
+  const renderChatItem = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.chatItem} 
+      onPress={() => {
+        setSelectedChat(item);
+        setMessages([]); // Clear messages when switching chats
+      }}
+    >
+      <Text style={styles.chatName}>{item.name}</Text>
+      <Text style={styles.lastMessage}>{item.lastMessage}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderMessageItem = ({ item }) => (
     <View style={[styles.messageContainer, item.sender === 'user' ? styles.userMessage : styles.receivedMessage]}>
       <Text style={styles.messageText}>{item.text}</Text>
     </View>
@@ -28,29 +59,47 @@ export default function ChatScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Chat with {selectedVehicle?.name}</Text>
-      <FlatList
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.messagesContainer}
-      />
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={newMessage}
-          onChangeText={setNewMessage}
-          placeholder="Type a message"
-          placeholderTextColor="#999"
-          autoFocus={true}
-        />
-        <TouchableOpacity style={styles.smileyButton} onPress={() => setEmojiModalVisible(true)}>
-          <Text style={styles.smileyText}>😊</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-          <Ionicons name="send" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
+      {!selectedChat ? (
+        <>
+          <Text style={styles.header}>Chats</Text>
+          <FlatList
+            data={chats}
+            renderItem={renderChatItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.chatListContainer}
+          />
+        </>
+      ) : (
+        <>
+          <View style={styles.chatHeader}>
+            <TouchableOpacity onPress={() => setSelectedChat(null)}>
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            <Text style={styles.chatHeaderText}>{selectedChat.name}</Text>
+          </View>
+          <FlatList
+            data={messages}
+            renderItem={renderMessageItem}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.messagesContainer}
+          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={newMessage}
+              onChangeText={setNewMessage}
+              placeholder="Type a message"
+              placeholderTextColor="#999"
+            />
+            <TouchableOpacity style={styles.smileyButton} onPress={() => setEmojiModalVisible(true)}>
+              <Text style={styles.smileyText}>😊</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+              <Ionicons name="send" size={24} color="white" />
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
       <Modal
         visible={emojiModalVisible}
@@ -89,6 +138,35 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#6200ea',
     color: 'white',
+  },
+  chatListContainer: {
+    paddingHorizontal: 10,
+  },
+  chatItem: {
+    backgroundColor: 'white',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  chatName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  lastMessage: {
+    color: '#666',
+    marginTop: 5,
+  },
+  chatHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#6200ea',
+  },
+  chatHeaderText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    marginLeft: 15,
   },
   messagesContainer: {
     flexGrow: 1,

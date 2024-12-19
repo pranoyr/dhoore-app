@@ -41,6 +41,7 @@ export default function HomeScreen({ route, navigation }) {
 
   const [userDetails, setUserDetails] = useState(null);
   const [userModalVisible, setUserModalVisible] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0); // State for timer
 
   useFocusEffect(
     useCallback(() => {
@@ -108,6 +109,14 @@ export default function HomeScreen({ route, navigation }) {
 
   const handleSearch = async () => {
     try {
+
+
+      // update the destination and status in the running vehicles table
+      const response1 = await apiRequest('/api/start-journey/', 'GET', null, { status: "running", destination: endSearchText });
+      // if error occurs, show alert Not Found'
+    
+      
+    
       const response = await apiRequest('/api/vehicles', 'GET', null, { start: "startSearchText", end: endSearchText });
       setVehicles(response);
       setShowSearchBars(false);
@@ -238,6 +247,11 @@ export default function HomeScreen({ route, navigation }) {
   };
 
   const handleStop = () => {
+
+    // update the destination and status in the running vehicles table
+    const response1 = apiRequest('/api/stop-journey/', 'GET', null, { status: "stopped"});
+
+
     setShowMarkers(false);
     setShowOnlyUserLocation(true);
     setShowSearchBars(true);
@@ -245,6 +259,27 @@ export default function HomeScreen({ route, navigation }) {
     setVehicles([]); // Clear the vehicles array
     setHelpButtonVisible(false); // Hide the help button
   };
+
+
+  // // Timer functionality
+  // useEffect(() => {
+  //   let timer;
+  //   if (journeyStarted) {
+  //     timer = setInterval(() => {
+  //       setElapsedTime(prevTime => prevTime + 1);
+  //     }, 1000);
+  //   } else if (!journeyStarted && elapsedTime !== 0) {
+  //     clearInterval(timer);
+  //   }
+  //   return () => clearInterval(timer);
+  // }, [journeyStarted]);
+
+  // const formatTime = (seconds) => {
+  //   const h = Math.floor(seconds / 3600);
+  //   const m = Math.floor((seconds % 3600) / 60);
+  //   const s = seconds % 60;
+  //   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  // };
 
   return (
     <View style={styles.container}>
