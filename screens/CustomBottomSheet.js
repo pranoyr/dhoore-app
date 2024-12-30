@@ -1,110 +1,116 @@
 import React, { useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  PanResponder,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import { View, StyleSheet, Animated, PanResponder, Text, Dimensions } from 'react-native';
 
-const { height: screenHeight } = Dimensions.get('window');
+const { height: screenHeight } = Dimensions.get('window'); // Screen height
 
 const CustomBottomSheet = () => {
-  const translateY = useRef(new Animated.Value(screenHeight)).current; // Initially hidden off-screen
+  // Define snap points
+  const snapPoints = {
+    top: 0, // Fully open
+    middle: screenHeight / 2, // Middle position
+    bottom: screenHeight - 100, // Slightly visible at the bottom
+  };
 
-  // PanResponder for dragging the bottom sheet
+  const translateY = useRef(new Animated.Value(snapPoints.bottom)).current; // Start at bottom snap point
+  const lastTranslateY = useRef(snapPoints.bottom); // Keep track of the last snap position
+
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (event, gestureState) => {
+        // Only allow movement if the user drags sufficiently
+        return Math.abs(gestureState.dy) > 5;
+      },
       onPanResponderMove: (event, gestureState) => {
-        if (gestureState.dy > 0) {
-          translateY.setValue(gestureState.dy);
+        const newTranslateY = lastTranslateY.current + gestureState.dy;
+
+        // Allow movement only within bounds
+        if (newTranslateY >= snapPoints.top && newTranslateY <= snapPoints.bottom) {
+          translateY.setValue(newTranslateY);
         }
       },
       onPanResponderRelease: (event, gestureState) => {
-        if (gestureState.dy > 150) {
-          closeSheet();
+        const dragThreshold = 50; // Minimum movement to trigger snapping
+        const midpoint = snapPoints.middle;
+
+        // Update the last translateY position
+        const currentY = translateY._value;
+
+        // Snap to closest position
+        if (gestureState.dy > 0 && currentY > midpoint + dragThreshold) {
+          closeSheet(); // Snap to bottom
+        } else if (gestureState.dy < 0 && currentY < midpoint - dragThreshold) {
+          openSheet(); // Snap to top
         } else {
-          openSheet();
+          moveToMiddle(); // Snap to middle
         }
+        lastTranslateY.current = translateY._value; // Update the last position
       },
     })
   ).current;
 
   const openSheet = () => {
     Animated.timing(translateY, {
-      toValue: screenHeight * 0.4, // Adjust to where you want the sheet to stop
+      toValue: snapPoints.top, // Fully open (top position)
       duration: 300,
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+      lastTranslateY.current = snapPoints.top; // Update last position after animation
+    });
   };
 
   const closeSheet = () => {
     Animated.timing(translateY, {
-      toValue: screenHeight,
+      toValue: snapPoints.bottom, // Fully closed (bottom position)
       duration: 300,
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+      lastTranslateY.current = snapPoints.bottom; // Update last position after animation
+    });
+  };
+
+  const moveToMiddle = () => {
+    Animated.timing(translateY, {
+      toValue: snapPoints.middle, // Snap to middle position
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      lastTranslateY.current = snapPoints.middle; // Update last position after animation
+    });
   };
 
   return (
-    <View style={styles.container}>
-      {/* Trigger Button */}
-      <TouchableOpacity style={styles.openButton} onPress={openSheet}>
-        <Text style={styles.buttonText}>Open Bottom Sheet</Text>
-      </TouchableOpacity>
-
-      {/* Bottom Sheet */}
-      <Animated.View
-        style={[
-          styles.bottomSheet,
-          {
-            transform: [{ translateY }],
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        <View style={styles.handle} />
-        <Text style={styles.sheetTitle}>Custom Bottom Sheet</Text>
-        <Text style={styles.sheetText}>This is your custom bottom sheet content.</Text>
-        <TouchableOpacity style={styles.closeButton} onPress={closeSheet}>
-          <Text style={styles.buttonText}>Close</Text>
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
+    <Animated.View
+      style={[
+        styles.bottomSheet,
+        {
+          transform: [{ translateY }],
+        },
+      ]}
+      {...panResponder.panHandlers}
+    >
+      <View style={styles.handle} />
+      <View style={styles.content}>
+        <Text style={styles.sheetTitle}>Drag Me!</Text>
+        <Text style={styles.sheetDescription}>
+          Drag the bottom sheet up or down to control its position.
+        </Text>
+      </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  openButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
   bottomSheet: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
-    height: screenHeight * 0.6, // Adjust height as needed
+    height: screenHeight, // Allow full-screen dragging
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 5,
     padding: 16,
@@ -117,20 +123,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginVertical: 10,
   },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   sheetTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  sheetText: {
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  closeButton: {
-    backgroundColor: '#e74c3c',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
+  sheetDescription: {
+    fontSize: 14,
+    color: '#666',
   },
 });
 
