@@ -16,7 +16,7 @@ import carIcon from '../assets/carIcon.png';
 import bikeIcon from '../assets/bikeIcon.png';
 import destinationIcon from '../assets/flag.png';
 
-export default function HomeScreen({ route, navigation }) {
+export default function HomeScreen({ route, navigation, registerStopHandler }) {
  
 
 
@@ -26,10 +26,12 @@ export default function HomeScreen({ route, navigation }) {
   
 
   const mapRef = useRef(null);
+  const [mapKey, setMapKey] = useState(0); // Initialize the map key
+
   const [vehicles, setVehicles] = useState([]);
   const [showSearchBars, setShowSearchBars] = useState(true);
   const [startSearchText, setStartSearchText] = useState('');
-  const [endSearchText, setEndSearchText] = useState('');
+  let [endSearchText, setEndSearchText] = useState('');
   const [userLocation, setUserLocation] = useState(null);
   const [destinationLocation, setDestinationLocation] = useState(null);
   const [showMarkers, setShowMarkers] = useState(false);
@@ -58,8 +60,15 @@ export default function HomeScreen({ route, navigation }) {
   const [userid , setUserid] = useState(null);
 
   const { searchText } = useBottomSheet();
+  
 
   console.log('End Search Text', searchText);
+
+
+  //   // Extract the actual search text (if necessary)
+  // const actualSearchText = searchText.split('-')[0]; // Extract the text before the `-`
+  // console.log('Actual Search Text:', actualSearchText);
+
 
   useEffect(() => {
     setEndSearchText(searchText);
@@ -75,7 +84,14 @@ export default function HomeScreen({ route, navigation }) {
     }, [endSearchText]);
 
 
+    useEffect(() => {
+      if (registerStopHandler) {
+        registerStopHandler(() => handleStop); // Register the stop handler
+      }
+    }, [registerStopHandler]);
 
+
+ 
 
 
 
@@ -202,7 +218,12 @@ export default function HomeScreen({ route, navigation }) {
   const handleSearch = async () => {
     try {
 
-     
+
+
+      console.log('Searching....');
+
+
+      endSearchText = endSearchText.split('-')[0];
 
       const destinationCoords = await geocodeDestination(endSearchText);
       const reverseGeocode = await Location.reverseGeocodeAsync(destinationCoords);
@@ -365,6 +386,8 @@ export default function HomeScreen({ route, navigation }) {
 
   const handleStop = () => {
 
+    console.log('Stopped ....');
+
     // update the destination and status in the running vehicles table
     const response1 = apiRequest('/api/stop-journey/', 'GET', null, { status: "stopped"});
 
@@ -375,6 +398,7 @@ export default function HomeScreen({ route, navigation }) {
     setJourneyStarted(false); // Set journeyStarted to false when journey is stopped
     setVehicles([]); // Clear the vehicles array
     setHelpButtonVisible(false); // Hide the help button
+    setMapKey((prevKey) => prevKey + 1); // Increment the key to force re-render
   };
 
 
@@ -403,6 +427,7 @@ export default function HomeScreen({ route, navigation }) {
 
       
       <MapView
+       key={`map-${mapKey}`}
         ref={mapRef}
         style={styles.map}
         initialRegion={{
@@ -485,7 +510,7 @@ export default function HomeScreen({ route, navigation }) {
       {/* <TouchableOpacity style={styles.findHelpButton} onPress={handleFindHelp}>
         <FontAwesome5 name="hands-helping" size={24} color="white" />
       </TouchableOpacity> */}
-
+{/* 
     {helpButtonVisible && (
 
     <TouchableOpacity style={styles.findHelpButton} onPress={handleFindHelp}>
@@ -494,7 +519,7 @@ export default function HomeScreen({ route, navigation }) {
         <Text style={styles.helpButtonText}>Find Help</Text>
       </View>
     </TouchableOpacity>
-    )}
+    )} */}
 
 
       {/* Modal for Nearest Vehicle */}
@@ -625,15 +650,18 @@ export default function HomeScreen({ route, navigation }) {
         </View>
       </Modal>
 
-        {/* Stop Button */}
+        {/* Stop Button
     {journeyStarted && (
+      
   <TouchableOpacity style={styles.stopButton} onPress={handleStop} disabled={!journeyStarted}>
     <View style={styles.iconTextContainer}>
       <FontAwesome name="stop" size={15} color="white" />
       <Text style={styles.stopButtonText}>Stop</Text>
     </View>
   </TouchableOpacity>
-)}
+
+
+)} */}
 
 
   {/* Pass handleSearch as onSearch prop */}

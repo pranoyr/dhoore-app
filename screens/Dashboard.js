@@ -12,20 +12,37 @@ const BottomSheetContext = createContext();
 const Dashboard = () => {
   const [searchText, setSearchText] = useState('');
 
+  const [stopHandler, setStopHandler] = useState(null);
+
 
   const Tab = createBottomTabNavigator();
 
+  // const handleSearch = (text) => {
+  //   console.log('Updating Search Text:', text);
+  //   setSearchText(text); // Update context value
+  // };
+
   const handleSearch = (text) => {
-    console.log('Updating Search Text:', text);
-    setSearchText(text); // Update context value
+    const uniqueSearchText = `${text}-${Date.now()}`; // Append a timestamp
+    // console.log('Updating Search Text:', uniqueSearchText);
+    setSearchText(uniqueSearchText); // Update context value
   };
+  
 
   return (
     <Provider>
-      <BottomSheetContext.Provider value={{ searchText, setSearchText: handleSearch }}>
+      <BottomSheetContext.Provider value={{ searchText, stopHandler }}>
         <View style={styles.container}>
           <Tab.Navigator>
-            <Tab.Screen name="Home" component={HomeScreen} />
+            <Tab.Screen name="Home">
+              {({ route, navigation }) => (
+                <HomeScreen
+                  route={route}
+                  navigation={navigation}
+                  registerStopHandler={setStopHandler} // Pass setStopHandler
+                />
+              )}
+            </Tab.Screen>
             <Tab.Screen name="Chats" component={ChatsScreen} />
             <Tab.Screen name="Account" component={AccountScreen} />
           </Tab.Navigator>
