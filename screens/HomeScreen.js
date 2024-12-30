@@ -7,6 +7,9 @@ import apiRequest from '../apis/api';
 import { MaterialIcons, FontAwesome5, FontAwesome } from '@expo/vector-icons'; // Import icons
 import { useFocusEffect } from '@react-navigation/native';
 import { getDistance } from 'geolib'; // Import getDistance from geolib
+import { useBottomSheet } from './Dashboard';
+
+
 
 // Import your custom icons
 import carIcon from '../assets/carIcon.png';
@@ -14,6 +17,14 @@ import bikeIcon from '../assets/bikeIcon.png';
 import destinationIcon from '../assets/flag.png';
 
 export default function HomeScreen({ route, navigation }) {
+ 
+
+
+ 
+
+
+  
+
   const mapRef = useRef(null);
   const [vehicles, setVehicles] = useState([]);
   const [showSearchBars, setShowSearchBars] = useState(true);
@@ -46,32 +57,25 @@ export default function HomeScreen({ route, navigation }) {
 
   const [userid , setUserid] = useState(null);
 
+  const { searchText } = useBottomSheet();
 
-  // const fetchChats = async () => {
-  //   try {
-  //     const fetchedChats = await apiRequest('/api/last-messages', 'GET'); // Fetch chat list
-  //     console.log('Fetched chats:', fetchedChats);
-  //     setChats(fetchedChats);
-  //   } catch (error) {
-  //     console.err
-  //     or('Error fetching chats:', error);
-  //   }
-  // };
+  console.log('End Search Text', searchText);
+
+  useEffect(() => {
+    setEndSearchText(searchText);
+  }, [searchText]);
 
 
-  // useEffect(() => {
-  //   const fetchChats = async () => {
-  //     try {
-  //       const fetchedChats = await apiRequest('/api/last-messages', 'GET'); // Fetch chat list
-  //       console.log('Fetched chats:', fetchedChats);
-  //       setChats(fetchedChats);
-  //     } catch (error) {
-  //       console.error('Error fetching chats:', error);
-  //     }
-  //   };
 
-  //   fetchChats();
-  // }, []);
+    // Call `handleSearch` whenever `endSearchText` changes
+    useEffect(() => {
+      if (endSearchText) {
+        handleSearch();
+      }
+    }, [endSearchText]);
+
+
+
 
 
 
@@ -198,6 +202,8 @@ export default function HomeScreen({ route, navigation }) {
   const handleSearch = async () => {
     try {
 
+     
+
       const destinationCoords = await geocodeDestination(endSearchText);
       const reverseGeocode = await Location.reverseGeocodeAsync(destinationCoords);
      
@@ -219,14 +225,6 @@ export default function HomeScreen({ route, navigation }) {
       setShowMarkers(true);
       setShowOnlyUserLocation(false); // Ensure vehicles are shown
       setHelpButtonVisible(true); // Hide the help button
-
-
-      // const destinationCoords = await geocodeDestination(endSearchText);
-      // const reverseGeocode = await Location.reverseGeocodeAsync(destinationCoords);
-      // if (reverseGeocode.length > 0) {
-      //   const place = reverseGeocode[0].city
-      //   console.log('Destination location:', place);
-      // }
 
 
       
@@ -373,7 +371,7 @@ export default function HomeScreen({ route, navigation }) {
 
     setShowMarkers(false);
     setShowOnlyUserLocation(true);
-    setShowSearchBars(true);
+    // setShowSearchBars(true);
     setJourneyStarted(false); // Set journeyStarted to false when journey is stopped
     setVehicles([]); // Clear the vehicles array
     setHelpButtonVisible(false); // Hide the help button
@@ -402,6 +400,8 @@ export default function HomeScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
+
+      
       <MapView
         ref={mapRef}
         style={styles.map}
@@ -475,20 +475,7 @@ export default function HomeScreen({ route, navigation }) {
           
         ))}
       </MapView>
-      {showSearchBars && (
-        <View style={styles.searchBarsContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Enter destination"
-            value={endSearchText}
-            onChangeText={text => setEndSearchText(text)}
-          />
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-            <Text style={styles.searchButtonText}>Start Journey</Text>
-          </TouchableOpacity>
       
-        </View>
-      )}
       {/* <TouchableOpacity style={styles.searchIconButton} onPress={toggleSearchBars}>
         <MaterialIcons name="more-vert" size={24} color="white" />
       </TouchableOpacity> */}
@@ -648,8 +635,14 @@ export default function HomeScreen({ route, navigation }) {
   </TouchableOpacity>
 )}
 
+
+  {/* Pass handleSearch as onSearch prop */}
+  {/* <CustomBottomSheet onSearch={handleSearch} /> */}
+
       
     </View>
+
+    
   );
 }
 
@@ -716,7 +709,7 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    bottom: 16,
+    bottom: 600,
     right: 16,
     zIndex: 10,
   },

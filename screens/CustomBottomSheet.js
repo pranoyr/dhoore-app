@@ -1,142 +1,132 @@
-import React, { useRef } from 'react';
-import { View, StyleSheet, Animated, PanResponder, Text, Dimensions } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, StyleSheet, TextInput, TouchableOpacity, Text, Animated, PanResponder, Dimensions } from 'react-native';
 
 const { height: screenHeight } = Dimensions.get('window'); // Screen height
 
-const CustomBottomSheet = () => {
-  // Define snap points
+const CustomBottomSheet = ({ onSearch }) => {
+  const [searchText, setSearchText] = useState('');
+
   const snapPoints = {
-    top: 0, // Fully open
-    middle: screenHeight / 2, // Middle position
-    bottom: screenHeight - 100, // Slightly visible at the bottom
+    top: 0,
+    middle: screenHeight / 2,
+    bottom: screenHeight - 100,
   };
 
-  const translateY = useRef(new Animated.Value(snapPoints.bottom)).current; // Start at bottom snap point
-  const lastTranslateY = useRef(snapPoints.bottom); // Keep track of the last snap position
+  const translateY = useRef(new Animated.Value(snapPoints.bottom)).current;
+  const lastTranslateY = useRef(snapPoints.bottom);
 
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (event, gestureState) => {
-        // Only allow movement if the user drags sufficiently
-        return Math.abs(gestureState.dy) > 5;
-      },
-      onPanResponderMove: (event, gestureState) => {
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
+      onPanResponderMove: (_, gestureState) => {
         const newTranslateY = lastTranslateY.current + gestureState.dy;
-
-        // Allow movement only within bounds
         if (newTranslateY >= snapPoints.top && newTranslateY <= snapPoints.bottom) {
           translateY.setValue(newTranslateY);
         }
       },
-      onPanResponderRelease: (event, gestureState) => {
-        const dragThreshold = 50; // Minimum movement to trigger snapping
-        const midpoint = snapPoints.middle;
-
-        // Update the last translateY position
+      onPanResponderRelease: (_, gestureState) => {
         const currentY = translateY._value;
-
-        // Snap to closest position
-        if (gestureState.dy > 0 && currentY > midpoint + dragThreshold) {
-          closeSheet(); // Snap to bottom
-        } else if (gestureState.dy < 0 && currentY < midpoint - dragThreshold) {
-          openSheet(); // Snap to top
+        if (gestureState.dy > 0 && currentY > snapPoints.middle) {
+          closeSheet();
+        } else if (gestureState.dy < 0 && currentY < snapPoints.middle) {
+          openSheet();
         } else {
-          moveToMiddle(); // Snap to middle
+          moveToMiddle();
         }
-        lastTranslateY.current = translateY._value; // Update the last position
+        lastTranslateY.current = translateY._value;
       },
     })
   ).current;
 
   const openSheet = () => {
     Animated.timing(translateY, {
-      toValue: snapPoints.top, // Fully open (top position)
+      toValue: snapPoints.top,
       duration: 300,
       useNativeDriver: true,
-    }).start(() => {
-      lastTranslateY.current = snapPoints.top; // Update last position after animation
-    });
+    }).start();
   };
 
   const closeSheet = () => {
     Animated.timing(translateY, {
-      toValue: snapPoints.bottom, // Fully closed (bottom position)
+      toValue: snapPoints.bottom,
       duration: 300,
       useNativeDriver: true,
-    }).start(() => {
-      lastTranslateY.current = snapPoints.bottom; // Update last position after animation
-    });
+    }).start();
   };
 
   const moveToMiddle = () => {
     Animated.timing(translateY, {
-      toValue: snapPoints.middle, // Snap to middle position
+      toValue: snapPoints.middle,
       duration: 300,
       useNativeDriver: true,
-    }).start(() => {
-      lastTranslateY.current = snapPoints.middle; // Update last position after animation
-    });
+    }).start();
   };
 
-  return (
-    <Animated.View
-      style={[
-        styles.bottomSheet,
-        {
-          transform: [{ translateY }],
-        },
-      ]}
-      {...panResponder.panHandlers}
-    >
-      <View style={styles.handle} />
-      <View style={styles.content}>
-        <Text style={styles.sheetTitle}>Drag Me!</Text>
-        <Text style={styles.sheetDescription}>
-          Drag the bottom sheet up or down to control its position.
-        </Text>
-      </View>
-    </Animated.View>
-  );
-};
+  const handleSearchPress = () => {
+    onSearch(searchText);
+  };
 
+return (
+    <Animated.View
+        style={[styles.bottomSheet, { transform: [{ translateY }] }]}
+        {...panResponder.panHandlers}
+    >
+        <View style={styles.handle} />
+        <View style={styles.content}>
+            <TextInput
+                style={styles.searchInput}
+                placeholder="Enter destination"
+                value={searchText}
+                onChangeText={setSearchText}
+            />
+            <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
+                <Text style={styles.searchButtonText}>Search</Text>
+            </TouchableOpacity>
+        </View>
+    </Animated.View>
+);
+};
 const styles = StyleSheet.create({
-  bottomSheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: screenHeight, // Allow full-screen dragging
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
-    padding: 16,
-  },
-  handle: {
-    width: 60,
-    height: 5,
-    backgroundColor: '#ccc',
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginVertical: 10,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sheetTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  sheetDescription: {
-    fontSize: 14,
-    color: '#666',
-  },
+    bottomSheet: {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: screenHeight,
+            backgroundColor: '#191919', // Changed to black
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            elevation: 5,
+    },
+    handle: {
+            width: 60,
+            height: 5,
+            backgroundColor: '#565656',
+
+            borderRadius: 3,
+            alignSelf: 'center',
+            marginVertical: 10,
+    },
+    content: {
+            padding: 16,
+    },
+    searchInput: {
+            height: 40,
+            backgroundColor: '#a9a9a9', // Changed to dark grey shade
+            borderRadius: 12, // Changed to make the search box round
+            marginBottom: 10,
+            paddingHorizontal: 8,
+    },
+    searchButton: {
+            backgroundColor: '#007BFF',
+            padding: 10,
+            borderRadius: 5,
+            alignItems: 'center',
+    },
+    searchButtonText: {
+            color: '#fff',
+            fontWeight: 'bold',
+    },
 });
 
 export default CustomBottomSheet;
