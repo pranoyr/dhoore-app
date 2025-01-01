@@ -78,8 +78,10 @@ export default function ChatScreen({ navigation }) {
   }, [navigation]);
 
   const renderChatItem = ({ item }) => (
+
     <TouchableOpacity
       style={styles.chatItem}
+   
       onPress={() => navigation.navigate('PersonChatScreen', { selectedChat: item })}
       onLongPress={() => openModal(item)}
     >

@@ -3,11 +3,13 @@ import { View, StyleSheet, TextInput, TouchableOpacity, Text, Animated, PanRespo
 
 const { height: screenHeight } = Dimensions.get('window'); // Screen height
 import { useBottomSheet } from './Dashboard';
+import { FontAwesome } from '@expo/vector-icons'; // Import FontAwesome for messaging icon
+
 
 import * as Location from 'expo-location';
 import apiRequest from '../apis/api';
 
-const CustomBottomSheet = ({ onSearch }) => {
+const CustomBottomSheet = ({onSearch, navigation }) => {
     const [searchText, setSearchText] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [vehicles, setVehicles] = useState([]); // State to hold vehicles data
@@ -15,7 +17,7 @@ const CustomBottomSheet = ({ onSearch }) => {
     const { stopHandler } = useBottomSheet(); // Access stopHandler from context
 
     const snapPoints = {
-        top: 0,
+        top: 150,
         middle: screenHeight / 2,
         bottom: screenHeight - 50,
     };
@@ -86,6 +88,7 @@ const CustomBottomSheet = ({ onSearch }) => {
         }
       };
 
+
     const handleSearchPress = async () => {
         try {
             onSearch(searchText);
@@ -118,11 +121,27 @@ const CustomBottomSheet = ({ onSearch }) => {
         setIsSearching(false);
     };
 
+
+    const handleChatPress = (vehicleId, name) => {
+        // navigation.navigate('PersonChatScreen', { vehicleId }); // Navigate to ChatScreen and pass vehicleId
+        navigation.navigate('PersonChatScreen', { selectedChat: { id: vehicleId, name:name } });
+        console.log(`Chat button pressed for vehicle ID: ${vehicleId}`);
+        // Add navigation or chat logic here
+    };
+
+
+
     const renderVehicleCard = ({ item }) => (
         <View style={styles.vehicleCard}>
-            <Text style={styles.vehicleName}>{item.name}</Text>
-            <Text style={styles.vehicleDetails}>Type: {item.type}</Text>
-            <Text style={styles.vehicleDetails}>Model: {item.model}</Text>
+            <View style={styles.vehicleDetailsContainer}>
+                <View>
+                    <Text style={styles.vehicleName}>{item.name}</Text>
+                    <Text style={styles.vehicleDetails}>Model: {item.model}</Text>
+                </View>
+                <TouchableOpacity onPress={() => handleChatPress(item.user_id, item.name)} style={styles.chatButton}>
+                    <FontAwesome name="comment" size={20} color="#007BFF" />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 
@@ -220,6 +239,11 @@ const styles = StyleSheet.create({
     vehicleDetails: {
         color: '#ccc',
         fontSize: 14,
+    },
+    vehicleDetailsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
 });
 
