@@ -11,7 +11,7 @@ const BottomSheetContext = createContext();
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const Dashboard = () => {
-  const [searchText, setSearchText] = useState('');
+  const [searchText, setSearchText] = useState('')
   const [stopHandler, setStopHandler] = useState(null);
   
   const Tab = createBottomTabNavigator();

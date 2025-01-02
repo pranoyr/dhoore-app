@@ -37,6 +37,7 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
   const [showMarkers, setShowMarkers] = useState(false);
   const [showOnlyUserLocation, setShowOnlyUserLocation] = useState(false); // New state
   const [modalVisible, setModalVisible] = useState(false);
+  const [place , setPlace] = useState('');
 
   const [helpButtonVisible, setHelpButtonVisible] = useState(false); // New state for help button
 
@@ -62,7 +63,7 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
   const { searchText } = useBottomSheet();
   
 
-  console.log('End Search Text', searchText);
+  console.log('End Search Text : ', searchText);
 
 
   //   // Extract the actual search text (if necessary)
@@ -116,14 +117,17 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
         // update in the db
         await updateLocationInDatabase(coords);
 
-        const destinationCoords = await geocodeDestination(endSearchText);
-        const reverseGeocode = await Location.reverseGeocodeAsync(destinationCoords);
+        // const destinationCoords = await geocodeDestination(endSearchText);
+        // const reverseGeocode = await Location.reverseGeocodeAsync(destinationCoords);
        
-          const place = reverseGeocode[0].city
-          console.log('Destination location:', place);
+          // const place = reverseGeocode[0].city
+          // console.log('Destination location:', place);
+
+
+          const place = endSearchText.split('-')[0];
       
   
-
+        console.log('updating....');
         // Fetch updated vehicle data
         const response = await apiRequest('/api/vehicles', 'GET', null, {
           start: "startSearchText",
@@ -199,20 +203,7 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
     }
   };
 
-  const fetchSuggestions = async (query) => {
-    try {
-      const response = await fetch(`https://api.olamaps.io/places/v1/autocomplete?input=${query}`);
-      const data = await response.json();
-      if (data.status === 'ok') {
-        setSuggestions(data.predictions);
-      } else {
-        setSuggestions([]);
-      }
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-      Alert.alert('Error', 'Failed to fetch suggestions.');
-    }
-  };
+  
 
 
   const handleSearch = async () => {
@@ -223,13 +214,24 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
       console.log('Searching....');
 
 
-      endSearchText = endSearchText.split('-')[0];
+      const place = endSearchText.split('-')[0];
+      // setPlace(endSearchText.split('-')[0]);
 
-      const destinationCoords = await geocodeDestination(endSearchText);
-      const reverseGeocode = await Location.reverseGeocodeAsync(destinationCoords);
+      lat = endSearchText.split('-')[1];
+      long = endSearchText.split('-')[2];
+
+
+      console.log("retrieved lat and long", lat, long);
+
+      const destinationCoords = { latitude: parseFloat(lat), longitude: parseFloat(long) };
+
+
+
+      // const destinationCoords = await geocodeDestination(endSearchText);
+      // const reverseGeocode = await Location.reverseGeocodeAsync(destinationCoords);
      
-        const place = reverseGeocode[0].city
-        console.log('Destination location:', place);
+      //   const place = reverseGeocode[0].city
+      //   console.log('Destination location:', place);
     
 
 
@@ -239,8 +241,15 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
       // if error occurs, show alert Not Found'
     
       
+
+      console.log('retrieving vehicles :', place);
     
       const response = await apiRequest('/api/vehicles', 'GET', null, { start: "startSearchText", end: place });
+
+
+      console.log('response:', response);
+
+
       setVehicles(response);
       setShowSearchBars(false);
       setShowMarkers(true);
@@ -256,7 +265,7 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
         Alert.alert('Error', 'Failed to geocode destination.');
       }
       setJourneyStarted(true); // Set journeyStarted to true when the journey starts
-      setJourneyInfoVisible(true); // Show journey info modal
+      // setJourneyInfoVisible(true); // Show journey info modal
     } catch (error) {
       console.error('Error fetching vehicles data:', error);
       Alert.alert('Error', 'Failed to fetch vehicles data.');

@@ -1,20 +1,30 @@
 import React, { useRef, useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Text, Animated, PanResponder, Dimensions, FlatList } from 'react-native';
-
-const { height: screenHeight } = Dimensions.get('window'); // Screen height
-import { useBottomSheet } from './Dashboard';
-import { FontAwesome } from '@expo/vector-icons'; // Import FontAwesome for messaging icon
-
-
+import {
+    View,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    Text,
+    Animated,
+    PanResponder,
+    Dimensions,
+    FlatList,
+} from 'react-native';
+import { FontAwesome } from '@expo/vector-icons'; // Icon library
 import * as Location from 'expo-location';
+import { useBottomSheet } from './Dashboard';
 import apiRequest from '../apis/api';
 
-const CustomBottomSheet = ({onSearch, navigation }) => {
-    const [searchText, setSearchText] = useState('');
-    const [isSearching, setIsSearching] = useState(false);
-    const [vehicles, setVehicles] = useState([]); // State to hold vehicles data
+const { height: screenHeight } = Dimensions.get('window');
+const GOOGLE_API_KEY = 'AIzaSyCQcwTvPsjZqcP6Za10WCvvmINgk2OsV1E'; // Replace with your Google API Key
 
-    const { stopHandler } = useBottomSheet(); // Access stopHandler from context
+const CustomBottomSheet = ({ onSearch, navigation }) => {
+    const [searchText, setSearchText] = useState('');
+    const [suggestions, setSuggestions] = useState([]); // Google Places suggestions
+    const [isSearching, setIsSearching] = useState(false);
+    const [vehicles, setVehicles] = useState([]); // Vehicle data
+
+    const { stopHandler } = useBottomSheet();
 
     const snapPoints = {
         top: 150,
@@ -72,64 +82,92 @@ const CustomBottomSheet = ({onSearch, navigation }) => {
         }).start();
     };
 
-    const geocodeDestination = async (address) => {
-        try {
-          const geocodingResponse = await Location.geocodeAsync(address);
-          if (geocodingResponse.length > 0) {
-            return {
-              latitude: geocodingResponse[0].latitude,
-              longitude: geocodingResponse[0].longitude,
-            };
-          }
-          return null;
-        } catch (error) {
-          console.error('Error geocoding address:', error);
-          return null;
+    const fetchSuggestions = async (input) => {
+        if (input.length < 3) {
+            setSuggestions([]);
+            return;
         }
-      };
 
-
-    const handleSearchPress = async () => {
         try {
-            onSearch(searchText);
-            setIsSearching(true);
+            const response = await fetch(
+                `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&key=${GOOGLE_API_KEY}`
+            );
+            const data = await response.json();
+            if (data.predictions) {
+                setSuggestions(data.predictions);
+            }
+        } catch (error) {
+            console.error('Error fetching suggestions:', error);
+        }
+    };
 
-            const destinationCoords = await geocodeDestination(searchText);
-            const reverseGeocode = await Location.reverseGeocodeAsync(destinationCoords);
-            
-            const place = reverseGeocode[0].city
-            console.log('Destination location:', place);
+    const handleSuggestionPress = async (suggestion) => {
+        try {
+            setSearchText(suggestion.description);
+            setSuggestions([]);
+
+            // Fetch place details
+            const response = await fetch(
+                `https://maps.googleapis.com/maps/api/place/details/json?place_id=${suggestion.place_id}&key=${GOOGLE_API_KEY}`
+            );
+            const data = await response.json();
+
+            // console.log("*****")
+            // console.log(data.result.geometry)
+
+            if (data.result) {
+                const location = data.result.geometry.location;
+                console.log('Selected location:', location);
+
+                const decodedLocation = { latitude: location.lat, longitude: location.lng };
+                const reverseGeocode = await Location.reverseGeocodeAsync(decodedLocation);
+                const place = reverseGeocode[0]?.city || 'Unknown';
+
+                console.log('place :', place);
+
+                console.log('lat and long:', data.result);
+
+                const locationData = place + "-" + data.result.geometry.location.lat + "-" + data.result.geometry.location.lng;
+
+
+
+
+                // Fetch vehicle data
+                const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
+                    start: 'startSearchText',
+                    end: place,
+                });
+
+
         
 
-            // Fetch updated vehicle data
-            const response = await apiRequest('/api/vehicles', 'GET', null, {
-                start: "startSearchText",
-                end: place,
-            });
-    
-            // console.log('response:', response);
-            setVehicles(response);
-            
-            // closeSheet(); // Move the sheet to the bottom
+                setVehicles(vehicleResponse);
+                moveToMiddle();
+
+                setIsSearching(true);
+
+                onSearch(locationData);
+            }
         } catch (error) {
-            console.error('Error fetching vehicles:', error);
+            console.error('Error handling suggestion press:', error);
         }
     };
 
     const handleStopPress = () => {
-        stopHandler(); // Call the stopHandler registered by HomeScreen
+        stopHandler();
         setIsSearching(false);
     };
 
-
     const handleChatPress = (vehicleId, name) => {
-        // navigation.navigate('PersonChatScreen', { vehicleId }); // Navigate to ChatScreen and pass vehicleId
-        navigation.navigate('PersonChatScreen', { selectedChat: { id: vehicleId, name:name } });
+        navigation.navigate('PersonChatScreen', { selectedChat: { id: vehicleId, name } });
         console.log(`Chat button pressed for vehicle ID: ${vehicleId}`);
-        // Add navigation or chat logic here
     };
 
-
+    const renderSuggestion = ({ item }) => (
+        <TouchableOpacity onPress={() => handleSuggestionPress(item)} style={styles.suggestion}>
+            <Text style={styles.suggestionText}>{item.description}</Text>
+        </TouchableOpacity>
+    );
 
     const renderVehicleCard = ({ item }) => (
         <View style={styles.vehicleCard}>
@@ -138,7 +176,10 @@ const CustomBottomSheet = ({onSearch, navigation }) => {
                     <Text style={styles.vehicleName}>{item.name}</Text>
                     <Text style={styles.vehicleDetails}>Model: {item.model}</Text>
                 </View>
-                <TouchableOpacity onPress={() => handleChatPress(item.user_id, item.name)} style={styles.chatButton}>
+                <TouchableOpacity
+                    onPress={() => handleChatPress(item.user_id, item.name)}
+                    style={styles.chatButton}
+                >
                     <FontAwesome name="comment" size={20} color="#007BFF" />
                 </TouchableOpacity>
             </View>
@@ -170,11 +211,18 @@ const CustomBottomSheet = ({onSearch, navigation }) => {
                             style={styles.searchInput}
                             placeholder="Enter destination"
                             value={searchText}
-                            onChangeText={setSearchText}
+                            onChangeText={(text) => {
+                                setSearchText(text);
+                                fetchSuggestions(text);
+                                openSheet();
+                            }}
                         />
-                        <TouchableOpacity style={styles.searchButton} onPress={handleSearchPress}>
-                            <Text style={styles.searchButtonText}>Search</Text>
-                        </TouchableOpacity>
+                        <FlatList
+                            data={suggestions}
+                            keyExtractor={(item) => item.place_id}
+                            renderItem={renderSuggestion}
+                            style={styles.suggestionsList}
+                        />
                     </>
                 )}
             </View>
@@ -212,6 +260,16 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         paddingHorizontal: 8,
     },
+    suggestion: {
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#444',
+    },
+    suggestionText: {
+        fontSize: 16,
+        color: '#fff',
+    },
     searchButton: {
         backgroundColor: '#007BFF',
         padding: 10,
@@ -244,6 +302,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+    },
+    suggestionsList: {
+        maxHeight: 200,
+        backgroundColor: '#333',
+        borderRadius: 8,
+        overflow: 'hidden',
     },
 });
 
