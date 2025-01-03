@@ -8,8 +8,8 @@ import axios from 'axios';
 let ws;
 
 
-// const ip_addr = "192.168.1.49"
-const ip_addr = "51.20.107.52"
+const ip_addr = "localhost"
+// const ip_addr = "16.16.68.77"
 
 const wsUrl = 'ws://'+ip_addr+':3000';
 

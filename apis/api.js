@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
-// const ip_addr = "192.168.1.49"
-const ip_addr = "51.20.107.52"
+const ip_addr = "localhost"
+// const ip_addr = "16.16.68.77"
 
 
 export const BASE_URL = 'http://'+ip_addr+':3000';
