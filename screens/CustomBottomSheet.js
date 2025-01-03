@@ -9,6 +9,7 @@ import {
     PanResponder,
     Dimensions,
     FlatList,
+    Keyboard,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons'; // Icon library
 import * as Location from 'expo-location';
@@ -48,6 +49,8 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 const currentY = translateY._value;
                 if (gestureState.dy > 0 && currentY > snapPoints.middle) {
                     closeSheet();
+                    // close keyboard
+                    Keyboard.dismiss();
                 } else if (gestureState.dy < 0 && currentY < snapPoints.middle) {
                     openSheet();
                 } else {
@@ -111,9 +114,8 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 `https://maps.googleapis.com/maps/api/place/details/json?place_id=${suggestion.place_id}&key=${GOOGLE_API_KEY}`
             );
             const data = await response.json();
+            
 
-            // console.log("*****")
-            // console.log(data.result.geometry)
 
             if (data.result) {
                 const location = data.result.geometry.location;
@@ -129,17 +131,11 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
                 const locationData = place + "-" + data.result.geometry.location.lat + "-" + data.result.geometry.location.lng;
 
-
-
-
                 // Fetch vehicle data
                 const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
                     start: 'startSearchText',
                     end: place,
                 });
-
-
-        
 
                 setVehicles(vehicleResponse);
                 moveToMiddle();
@@ -150,6 +146,14 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
             }
         } catch (error) {
             console.error('Error handling suggestion press:', error);
+        }
+    };
+
+    const handleSearchPress = async () => {
+        if (searchText.length > 0) {
+            await fetchSuggestions(searchText);
+            console.log('Search pressed:', searchText);
+            Keyboard.dismiss();
         }
     };
 
@@ -206,7 +210,7 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                         />
                     </>
                 ) : (
-                    <>
+                    <View style={styles.searchContainer}>
                         <TextInput
                             style={styles.searchInput}
                             placeholder="Enter destination"
@@ -216,15 +220,28 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                                 fetchSuggestions(text);
                                 openSheet();
                             }}
+                            returnKeyType="search"
+                            onSubmitEditing={handleSearchPress}
                         />
-                        <FlatList
-                            data={suggestions}
-                            keyExtractor={(item) => item.place_id}
-                            renderItem={renderSuggestion}
-                            style={styles.suggestionsList}
-                        />
-                    </>
+                        {searchText.length > 0 && (
+                            <TouchableOpacity
+                                style={styles.clearButton}
+                                onPress={() => {
+                                    setSearchText('');
+                                    setSuggestions([]);
+                                }}
+                            >
+                                <FontAwesome name="times" size={20} color="#555" />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 )}
+                <FlatList
+                    data={suggestions}
+                    keyExtractor={(item) => item.place_id}
+                    renderItem={renderSuggestion}
+                    style={styles.suggestionsList}
+                />
             </View>
         </Animated.View>
     );
@@ -253,12 +270,23 @@ const styles = StyleSheet.create({
     content: {
         padding: 16,
     },
-    searchInput: {
-        height: 40,
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#a9a9a9',
         borderRadius: 12,
         marginBottom: 10,
         paddingHorizontal: 8,
+    },
+    searchInput: {
+        flex: 1,
+        height: 40,
+        backgroundColor: 'transparent',
+        borderRadius: 12,
+        paddingHorizontal: 8,
+    },
+    clearButton: {
+        marginLeft: 8,
     },
     suggestion: {
         paddingVertical: 10,
