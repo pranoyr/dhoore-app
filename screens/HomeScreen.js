@@ -127,7 +127,8 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
           const place = endSearchText.split('-')[0];
       
   
-        console.log('updating....');
+        console.log('updating vehicles .... :', place);
+      
         // Fetch updated vehicle data
         const response = await apiRequest('/api/vehicles', 'GET', null, {
           start: "startSearchText",
@@ -393,12 +394,16 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
     setJourneyInfoVisible(false);
   };
 
-  const handleStop = () => {
+  const handleStop = async () => {
 
     console.log('Stopped ....');
 
+
+    setEndSearchText('');
+
     // update the destination and status in the running vehicles table
-    const response1 = apiRequest('/api/stop-journey/', 'GET', null, { status: "stopped"});
+    await apiRequest('/api/stop-journey/', 'GET', null, { status: "stopped"});
+    
 
 
     setShowMarkers(false);

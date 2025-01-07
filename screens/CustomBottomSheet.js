@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState , useEffect} from 'react';
 import {
     View,
     StyleSheet,
@@ -10,11 +10,18 @@ import {
     Dimensions,
     FlatList,
     Keyboard,
+    Platform,
+    Alert
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons'; // Icon library
 import * as Location from 'expo-location';
 import { useBottomSheet } from './Dashboard';
 import apiRequest from '../apis/api';
+import { useAppContext } from './AppProvider'; // Adjust the path to your context file
+
+
+
+import { sendPlaceInfo, addWebSocketListener, removeWebSocketListener } from '../apis/websocket';
 
 const { height: screenHeight } = Dimensions.get('window');
 const GOOGLE_API_KEY = 'AIzaSyCQcwTvPsjZqcP6Za10WCvvmINgk2OsV1E'; // Replace with your Google API Key
@@ -23,7 +30,11 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     const [searchText, setSearchText] = useState('');
     const [suggestions, setSuggestions] = useState([]); // Google Places suggestions
     const [isSearching, setIsSearching] = useState(false);
-    const [vehicles, setVehicles] = useState([]); // Vehicle data
+    const [vehicles, setVehicles] = useState([]); // Initialize as empty array
+    const selectedPlaceRef = useRef(''); // Ref to store selected place persistently
+
+
+     const { userId } = useAppContext(); // Access values from the context
 
     const { stopHandler } = useBottomSheet();
 
@@ -83,7 +94,56 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
             duration: 300,
             useNativeDriver: true,
         }).start();
+        
     };
+
+
+    useEffect(() => {
+        const handlePlaceBroadcast = async (message) => {
+            if (message.type === 'search_broadcast') {
+                const placeinfo = message.data.place;
+                console.log('broadcast received:******', placeinfo, userId);
+
+                // // put an alert 
+                // Alert.alert(placeinfo);
+
+
+                // console.log("********")
+                console.log('Selected place:', selectedPlaceRef.current);
+                console.log('Received place:', placeinfo);
+    
+                if (selectedPlaceRef.current === placeinfo) {
+                    try {
+                        // Fetch updated vehicle data for the broadcasted place
+                        const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
+                            start: 'startSearchText',
+                            end: placeinfo,
+                        });
+
+
+                        console.log('Vehicles updated after broadcast:', vehicleResponse);
+
+                        
+    
+                        setVehicles(vehicleResponse);
+                        setIsSearching(true);
+                        moveToMiddle();
+                        // closeSheet();
+                       
+                    } catch (error) {
+                        console.error('Error fetching vehicles after broadcast:', error);
+                    }
+                }
+            }
+        };
+    
+        addWebSocketListener(handlePlaceBroadcast); // Register listener
+    
+        return () => {
+            removeWebSocketListener(handlePlaceBroadcast); // Clean up listener on unmount
+        };
+    }, []);
+    
 
     const fetchSuggestions = async (input) => {
         if (input.length < 3) {
@@ -125,11 +185,17 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 const reverseGeocode = await Location.reverseGeocodeAsync(decodedLocation);
                 const place = reverseGeocode[0]?.city || 'Unknown';
 
-                console.log('place :', place);
 
-                console.log('lat and long:', data.result);
+                selectedPlaceRef.current = place; // Update the ref with the new place
+                console.log('Updated selected place:', selectedPlaceRef.current);
+
+                // console.log('place :', place);
+
+                // console.log('lat and long:', data.result);
 
                 const locationData = place + "-" + data.result.geometry.location.lat + "-" + data.result.geometry.location.lng;
+
+                await onSearch(locationData);
 
                 // Fetch vehicle data
                 const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
@@ -137,12 +203,18 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                     end: place,
                 });
 
+
+               
                 setVehicles(vehicleResponse);
+                
                 moveToMiddle();
 
                 setIsSearching(true);
 
-                onSearch(locationData);
+                sendPlaceInfo(place); // Broadcast the selected place
+
+
+                
             }
         } catch (error) {
             console.error('Error handling suggestion press:', error);
@@ -157,9 +229,43 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
         }
     };
 
-    const handleStopPress = () => {
-        stopHandler();
+    const handleStopPress = async () => {
+        await stopHandler();
+
+    
+
+        // sendPlaceInfo(selectedPlaceRef.current);  // Broadcast the selected place
+       
+       
+       
+       
+
+        
+        //clearn the vehicle data
+        setVehicles([]);
+        // clear the searchplace
+       
+
+       
+        //clearn all search
+        
+        
+
+       
         setIsSearching(false);
+
+
+        sendPlaceInfo(selectedPlaceRef.current);  // Broadcast the selected place
+       
+       
+
+        selectedPlaceRef.current = '';
+
+
+
+        
+
+        
     };
 
     const handleChatPress = (vehicleId, name) => {
@@ -218,7 +324,9 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                             onChangeText={(text) => {
                                 setSearchText(text);
                                 fetchSuggestions(text);
-                                openSheet();
+                                if (Platform.OS === 'ios') {
+                                    openSheet();
+                                }
                             }}
                             returnKeyType="search"
                             onSubmitEditing={handleSearchPress}

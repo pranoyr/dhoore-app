@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {apiRequest, BASE_URL} from '../apis/api'; // Adjust the path to your API utility
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { initWebSocket } from '../apis/websocket'; // Adjust the path to your WebSocket utility
 
 
 
@@ -26,6 +27,7 @@ export const AppProvider = ({ children }) => {
         if (response) {
           setUserId(response.user_id); // Assuming `id` is the user ID field
           setUserName(response.name); // Assuming `name` is the user name field
+          initWebSocket(response.user_id); // Initialize WebSocket once globally
         }
         else
         {

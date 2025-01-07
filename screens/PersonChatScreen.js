@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import apiRequest from '../apis/api';
-import { initWebSocket, sendMessageWebSocket } from '../apis/websocket';
 import { useAppContext } from './AppProvider'; // Adjust the path to your context file
+import { addWebSocketListener, removeWebSocketListener, sendMessageWebSocket } from '../apis/websocket';
 
 export default function PersonChatScreen({ navigation, route }) {
     const { selectedChat } = route.params;
@@ -13,30 +13,28 @@ export default function PersonChatScreen({ navigation, route }) {
     const scrollViewRef = useRef(null);
 
     useEffect(() => {
-        console.log('Initializing WebSocket');
-        const wsInstance = initWebSocket(userId, (message) => {
-            if (
-                message.type === 'message' &&
-                (message.data.sender_id === selectedChat.id || message.data.recipient_id === selectedChat.id)
-            ) {
-                setMessages((prevMessages) => [
-                    ...prevMessages,
-                    {
-                        id: Date.now(),
-                        text: message.data.content,
-                        sender: message.data.sender_id === userId ? 'user' : 'recipient',
-                    },
-                ]);
-            }
-        });
-
-        return () => {
-            if (wsInstance) {
-                console.log('Closing WebSocket on component unmount');
-                wsInstance.close();
-            }
+        const handleChatMessage = (message) => {
+          if (
+            message.type === 'message' &&
+            (message.data.sender_id === selectedChat.id || message.data.recipient_id === selectedChat.id)
+          ) {
+            setMessages((prevMessages) => [
+              ...prevMessages,
+              {
+                id: Date.now(),
+                text: message.data.content,
+                sender: message.data.sender_id === userId ? 'user' : 'recipient',
+              },
+            ]);
+          }
         };
-    }, [selectedChat, userId]);
+    
+        addWebSocketListener(handleChatMessage); // Register listener
+    
+        return () => {
+          removeWebSocketListener(handleChatMessage); // Clean up listener on unmount
+        };
+      }, [selectedChat, userId]);
 
     useEffect(() => {
         const fetchMessages = async () => {

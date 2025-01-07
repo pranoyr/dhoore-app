@@ -9,6 +9,9 @@ import {
   Keyboard,
 } from 'react-native';
 import axios from 'axios';
+import { initWebSocket } from '../apis/websocket'; // Adjust the path to your WebSocket utility
+
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppContext } from './AppProvider'; // adjust path if needed
 import { Ionicons } from '@expo/vector-icons'; // if you want an arrow icon, etc.
@@ -51,6 +54,11 @@ export default function OTPScreen({ route, navigation }) {
         phone: phoneNumber,
       });
       const { isNewUser, userId, name } = response1.data;
+
+
+       initWebSocket(response.user_id); // Initialize WebSocket once globally
+
+      
 
       if (token && refreshToken) {
         await AsyncStorage.setItem('token', token);
