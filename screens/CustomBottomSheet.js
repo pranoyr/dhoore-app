@@ -40,8 +40,8 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
     const snapPoints = {
         top: 150,
-        middle: screenHeight / 2,
-        bottom: screenHeight - 50,
+        middle: screenHeight / 2 - 10,
+        bottom: screenHeight - 180,
     };
 
     const translateY = useRef(new Animated.Value(snapPoints.middle)).current;
@@ -127,7 +127,7 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     
                         setVehicles(vehicleResponse);
                         setIsSearching(true);
-                        moveToMiddle();
+                        // moveToMiddle();
                         // closeSheet();
                        
                     } catch (error) {
@@ -207,7 +207,8 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                
                 setVehicles(vehicleResponse);
                 
-                moveToMiddle();
+                // moveToMiddle();
+                closeSheet();
 
                 setIsSearching(true);
 
@@ -320,13 +321,15 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                         <TextInput
                             style={styles.searchInput}
                             placeholder="Enter destination"
+                            onFocus={() => openSheet()} 
                             value={searchText}
                             onChangeText={(text) => {
                                 setSearchText(text);
                                 fetchSuggestions(text);
-                                if (Platform.OS === 'ios') {
-                                    openSheet();
-                                }
+                                
+                                // if (Platform.OS === 'ios') {
+                                //     openSheet();
+                                // }
                             }}
                             returnKeyType="search"
                             onSubmitEditing={handleSearchPress}

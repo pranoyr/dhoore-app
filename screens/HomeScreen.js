@@ -151,33 +151,74 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
     return () => clearInterval(interval);
   }, [endSearchText]);
   
+
+
+  useEffect(() => {
+    let locationSubscription;
   
-
-  
-
-  useFocusEffect(
-    useCallback(() => {
-      const fetchUserLocation = async () => {
-        try {
-          let { status } = await Location.requestForegroundPermissionsAsync();
-          if (status !== 'granted') {
-            Alert.alert('Error', 'Permission to access location was denied');
-            return;
-          }
-
-          let current_location = await Location.getCurrentPositionAsync({});
-          // setUserLocation({ latitude: 9.5, longitude: 76.4 });
-          setUserLocation(current_location.coords);
-          await updateLocationInDatabase(current_location.coords);
-        } catch (error) {
-          console.error('Error fetching user location:', error);
-          Alert.alert('Error', 'Failed to fetch user location');
+    const startLocationUpdates = async () => {
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Error', 'Permission to access location was denied');
+          return;
         }
-      };
+  
+        // Start watching the user's location
+        locationSubscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 5000, // Update every 5 seconds
+            distanceInterval: 10, // Update when user moves 10 meters
+          },
+          (location) => {
+            setUserLocation(location.coords); // Update user location state
+            updateLocationInDatabase(location.coords); // Optional: Update in database
+          }
+        );
+      } catch (error) {
+        console.error('Error starting location updates:', error);
+        Alert.alert('Error', 'Failed to start location updates.');
+      }
+    };
+  
+    startLocationUpdates();
+  
+    // Clean up the location subscription when the component unmounts
+    return () => {
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+    };
+  }, []);
+  
+  
 
-      fetchUserLocation();
-    }, [])
-  );
+  
+
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     const fetchUserLocation = async () => {
+  //       try {
+  //         let { status } = await Location.requestForegroundPermissionsAsync();
+  //         if (status !== 'granted') {
+  //           Alert.alert('Error', 'Permission to access location was denied');
+  //           return;
+  //         }
+
+  //         let current_location = await Location.getCurrentPositionAsync({});
+  //         // setUserLocation({ latitude: 9.5, longitude: 76.4 });
+  //         setUserLocation(current_location.coords);
+  //         await updateLocationInDatabase(current_location.coords);
+  //       } catch (error) {
+  //         console.error('Error fetching user location:', error);
+  //         Alert.alert('Error', 'Failed to fetch user location');
+  //       }
+  //     };
+
+  //     fetchUserLocation();
+  //   }, [])
+  // );
 
   const updateLocationInDatabase = async (coords) => {
     try {
@@ -459,17 +500,17 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
             }}
             title="Your Location"
             onPress={fetchUserDetails} // Call fetchUserDetails on press
-          />
+          >
+            <View style={styles.userLocationMarker}>
+          <View style={styles.userLocationOuterCircle} />
+          <View style={styles.userLocationInnerCircle} />
+        </View>
+          </Marker>
+          
         )}
-        {/* {showOnlyUserLocation && !showMarkers && userLocation && (
-          <Marker
-            coordinate={{
-              latitude: userLocation.latitude,
-              longitude: userLocation.longitude,
-            }}
-            title="Your Location"
-          />
-        )} */}
+       
+
+
         {showMarkers && destinationLocation && (
           <Marker
             coordinate={{
@@ -689,11 +730,36 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
 }
 
 const styles = StyleSheet.create({
+  userLocationMarker: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  userLocationOuterCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0, 122, 255, 0.2)', // Light blue translucent circle
+    position: 'absolute',
+  },
+  
+  userLocationInnerCircle: {
+    width: 15,
+    height: 15,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 122, 255, 1)', // Solid blue inner dot
+    borderWidth: 2,
+    borderColor: 'white',
+  },
+  
+  
   container: {
     flex: 1,
   },
   map: {
     flex: 1,
+    paddingBottom: 230, // Adjust this value as needed
+
   },
   searchIconButton: {
     position: 'absolute',

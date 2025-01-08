@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
-const ip_addr = "172.20.10.2"
+const ip_addr = "172.20.10.3"
 // const ip_addr = "16.16.68.77"
 
 
