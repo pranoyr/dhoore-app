@@ -8,6 +8,8 @@ import { MaterialIcons, FontAwesome5, FontAwesome } from '@expo/vector-icons'; /
 import { useFocusEffect } from '@react-navigation/native';
 import { getDistance } from 'geolib'; // Import getDistance from geolib
 import { useBottomSheet } from './Dashboard';
+import polyline from '@mapbox/polyline';
+
 
 
 
@@ -27,6 +29,10 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
 
   const mapRef = useRef(null);
   const [mapKey, setMapKey] = useState(0); // Initialize the map key
+
+  const [routeCoordinates, setRouteCoordinates] = useState([]); // State to store route points
+
+
 
   const [vehicles, setVehicles] = useState([]);
   const [showSearchBars, setShowSearchBars] = useState(true);
@@ -332,34 +338,45 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
 
   const handleRecenter = (vehiclesData, destinationCoords) => {
     if (mapRef.current) {
+      if (vehiclesData.length === 0 && !destinationCoords) {
+        // If no vehicles and destination, set default region with a moderate zoom level
+        mapRef.current.animateToRegion({
+          latitude: userLocation ? userLocation.latitude : 11.0168,
+          longitude: userLocation ? userLocation.longitude : 76.9558,
+          latitudeDelta: 0.05, // Adjust this value for desired zoom level
+          longitudeDelta: 0.05,
+        });
+        return;
+      }
+  
       const bounds = {
         north: userLocation ? userLocation.latitude : 0,
         south: userLocation ? userLocation.latitude : 0,
         east: userLocation ? userLocation.longitude : 0,
         west: userLocation ? userLocation.longitude : 0,
       };
-
-      vehiclesData.forEach(vehicle => {
+  
+      vehiclesData.forEach((vehicle) => {
         bounds.north = Math.max(bounds.north, vehicle.curr_lat);
         bounds.south = Math.min(bounds.south, vehicle.curr_lat);
         bounds.east = Math.max(bounds.east, vehicle.curr_long);
         bounds.west = Math.min(bounds.west, vehicle.curr_long);
       });
-
+  
       if (userLocation) {
         bounds.north = Math.max(bounds.north, userLocation.latitude);
         bounds.south = Math.min(bounds.south, userLocation.latitude);
         bounds.east = Math.max(bounds.east, userLocation.longitude);
         bounds.west = Math.min(bounds.west, userLocation.longitude);
       }
-
+  
       if (destinationCoords) {
         bounds.north = Math.max(bounds.north, destinationCoords.latitude);
         bounds.south = Math.min(bounds.south, destinationCoords.latitude);
         bounds.east = Math.max(bounds.east, destinationCoords.longitude);
         bounds.west = Math.min(bounds.west, destinationCoords.longitude);
       }
-
+  
       mapRef.current.fitToCoordinates(
         [
           { latitude: bounds.north, longitude: bounds.east },
@@ -372,6 +389,7 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
       );
     }
   };
+  
 
   const toggleSearchBars = () => {
     setShowSearchBars(!showSearchBars);
@@ -438,6 +456,9 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
   const handleStop = async () => {
 
     console.log('Stopped ....');
+
+    // set destinationCoords = null;
+    setDestinationLocation(null);
 
 
     setEndSearchText('');

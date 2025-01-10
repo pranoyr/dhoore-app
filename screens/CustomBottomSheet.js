@@ -1,4 +1,5 @@
 import React, { useRef, useState , useEffect} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     View,
     StyleSheet,
@@ -193,7 +194,14 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
                 // console.log('lat and long:', data.result);
 
-                const locationData = place + "-" + data.result.geometry.location.lat + "-" + data.result.geometry.location.lng;
+                const locationData = `${place}-${location.lat}-${location.lng}`;
+
+                 // Save location data to AsyncStorage
+                 await AsyncStorage.setItem('lastSearchLocation', JSON.stringify({
+                    place,
+                    locationData
+                }));
+
 
                 await onSearch(locationData);
 
@@ -233,40 +241,19 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     const handleStopPress = async () => {
         await stopHandler();
 
-    
-
-        // sendPlaceInfo(selectedPlaceRef.current);  // Broadcast the selected place
-       
-       
-       
-       
-
-        
+        await AsyncStorage.removeItem('lastSearchLocation');
         //clearn the vehicle data
         setVehicles([]);
         // clear the searchplace
-       
-
-       
-        //clearn all search
         
-        
-
        
         setIsSearching(false);
 
 
         sendPlaceInfo(selectedPlaceRef.current);  // Broadcast the selected place
-       
-       
-
+    
         selectedPlaceRef.current = '';
 
-
-
-        
-
-        
     };
 
     const handleChatPress = (vehicleId, name) => {
@@ -299,62 +286,76 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
     return (
         <Animated.View
-            style={[styles.bottomSheet, { transform: [{ translateY }] }]}
-            {...panResponder.panHandlers}
-        >
-            <View style={styles.handle} />
-            <View style={styles.content}>
-                {isSearching ? (
-                    <>
-                        <TouchableOpacity style={styles.searchButton} onPress={handleStopPress}>
-                            <Text style={styles.searchButtonText}>Stop</Text>
-                        </TouchableOpacity>
-                        <FlatList
-                            data={vehicles}
-                            keyExtractor={(item) => item.id.toString()}
-                            renderItem={renderVehicleCard}
-                            style={styles.vehicleList}
-                        />
-                    </>
-                ) : (
-                    <View style={styles.searchContainer}>
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Enter destination"
-                            onFocus={() => openSheet()} 
-                            value={searchText}
-                            onChangeText={(text) => {
-                                setSearchText(text);
-                                fetchSuggestions(text);
-                                
-                                // if (Platform.OS === 'ios') {
-                                //     openSheet();
-                                // }
-                            }}
-                            returnKeyType="search"
-                            onSubmitEditing={handleSearchPress}
-                        />
-                        {searchText.length > 0 && (
-                            <TouchableOpacity
-                                style={styles.clearButton}
-                                onPress={() => {
-                                    setSearchText('');
-                                    setSuggestions([]);
-                                }}
-                            >
-                                <FontAwesome name="times" size={20} color="#555" />
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                )}
-                <FlatList
-                    data={suggestions}
-                    keyExtractor={(item) => item.place_id}
-                    renderItem={renderSuggestion}
-                    style={styles.suggestionsList}
+    style={[styles.bottomSheet, { transform: [{ translateY }] }]}
+    {...panResponder.panHandlers}
+>
+    <View style={styles.handle} />
+
+    {/* Render buttons only when searching */}
+    {isSearching && (
+        <View style={styles.buttonGroup}>
+            <TouchableOpacity style={styles.button} onPress={handleStopPress}>
+                <FontAwesome name="stop" style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>Stop</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.button} onPress={() => console.log('Live Share')}>
+                <FontAwesome name="share-alt" style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>Live Share</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.button} onPress={() => console.log('My Flight')}>
+                <FontAwesome name="plane" style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>My Flight</Text>
+            </TouchableOpacity>
+        </View>
+    )}
+
+    <View style={styles.content}>
+        {isSearching ? (
+            <FlatList
+                data={vehicles}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderVehicleCard}
+                style={styles.vehicleList}
+            />
+        ) : (
+            <View style={styles.searchContainer}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Enter destination"
+                    onFocus={() => openSheet()}
+                    value={searchText}
+                    onChangeText={(text) => {
+                        setSearchText(text);
+                        fetchSuggestions(text);
+                    }}
+                    returnKeyType="search"
+                    onSubmitEditing={handleSearchPress}
                 />
+                {searchText.length > 0 && (
+                    <TouchableOpacity
+                        style={styles.clearButton}
+                        onPress={() => {
+                            setSearchText('');
+                            setSuggestions([]);
+                        }}
+                    >
+                        <FontAwesome name="times" size={20} color="#555" />
+                    </TouchableOpacity>
+                )}
             </View>
-        </Animated.View>
+        )}
+
+        <FlatList
+            data={suggestions}
+            keyExtractor={(item) => item.place_id}
+            renderItem={renderSuggestion}
+            style={styles.suggestionsList}
+        />
+    </View>
+</Animated.View>
+
     );
 };
 
@@ -420,7 +421,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     vehicleList: {
-        marginTop: 10,
+        marginTop: 20,
     },
     vehicleCard: {
         backgroundColor: '#282828',
@@ -448,6 +449,52 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         overflow: 'hidden',
     },
+    stopButton: {
+        position: 'absolute',
+        bottom: 20,
+        alignSelf: 'center',
+        backgroundColor: '#FF0000',
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 8,
+        
+    },
+
+
+    handle: {
+        width: 40,
+        height: 5,
+        backgroundColor: '#565656',
+        borderRadius: 3,
+        alignSelf: 'center',
+        marginBottom: 10,
+    },
+    buttonGroup: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        marginTop: 5,
+    },
+  
+    buttonText: {
+        color: 'white',
+        fontSize: 14,
+        marginTop: 5,
+    },
+    buttonIcon: {
+        color: 'white',
+        fontSize: 20,
+    },
+   
+      
+      
+     
+
+      
+      
 });
 
 export default CustomBottomSheet;
