@@ -14,6 +14,11 @@ export const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState('');
+  const [UserVehicleType, setUserVehicleType] = useState('');
+  const [UserVehicleMoldel, setUserVehicleMoldel] = useState('');
+  const [UserVehicleNumber, setUserVehicleNumber] = useState('');
+  const [UserVehicleRunningStatus, setUserVehicleRunningStatus] = useState('');
+
   const [url , setUrl] = useState(BASE_URL);
 
   // Fetch user details from the database
@@ -24,15 +29,24 @@ export const AppProvider = ({ children }) => {
         console.log('Token:', token);
         if (token) {
             const response = await apiRequest('/api/user-details', 'GET'); // Adjust the endpoint
+            console.log("user details",response);
         if (response) {
+          initWebSocket(response.user_id); // Initialize WebSocket once globally
           setUserId(response.user_id); // Assuming `id` is the user ID field
           setUserName(response.name); // Assuming `name` is the user name field
-          initWebSocket(response.user_id); // Initialize WebSocket once globally
+          setUserVehicleType(response.vehicleType);
+          setUserVehicleMoldel(response.model);
+          setUserVehicleNumber(response.licensePlate);
+          setUserVehicleRunningStatus(response.vehicle_status);
         }
         else
         {
           setUserId(null);
           setUserName('');
+          setUserVehicleType('');
+          setUserVehicleMoldel('');
+          setUserVehicleNumber('');
+          setUserVehicleRunningStatus('');
         }
 
 
@@ -52,6 +66,14 @@ export const AppProvider = ({ children }) => {
     setUserId,
     userName,
     setUserName,
+    UserVehicleType,
+    setUserVehicleType,
+    UserVehicleMoldel,
+    setUserVehicleMoldel,
+    UserVehicleNumber,
+    setUserVehicleNumber,
+    UserVehicleRunningStatus,
+    setUserVehicleRunningStatus,
     url,
     setUrl,
   };

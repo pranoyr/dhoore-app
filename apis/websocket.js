@@ -8,8 +8,8 @@ const listeners = []; // Store listeners for incoming messages
 let ws;
 
 
-// const ip_addr = "172.20.10.3"
-const ip_addr = "16.16.68.77"
+const ip_addr = "192.168.29.68"
+// const ip_addr = "16.16.68.77"
 
 const wsUrl = 'ws://'+ip_addr+':3000';
 

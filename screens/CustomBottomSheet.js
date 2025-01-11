@@ -1,5 +1,4 @@
 import React, { useRef, useState , useEffect} from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     View,
     StyleSheet,
@@ -35,7 +34,7 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     const selectedPlaceRef = useRef(''); // Ref to store selected place persistently
 
 
-     const { userId } = useAppContext(); // Access values from the context
+     const { userId, userName, UserVehicleMoldel } = useAppContext(); // Access values from the context
 
     const { stopHandler } = useBottomSheet();
 
@@ -102,27 +101,32 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     useEffect(() => {
         const handlePlaceBroadcast = async (message) => {
             if (message.type === 'search_broadcast') {
-                const placeinfo = message.data.place;
-                console.log('broadcast received:******', placeinfo, userId);
+                const placeinfo = message.data.place.place;
+           
+                const receivedVehicleData = message.data.place;
+                console.log('**** broadcast received:******', receivedVehicleData);
 
-                // // put an alert 
-                // Alert.alert(placeinfo);
 
+                const stopFlag = message.data.place.stop;
 
-                // console.log("********")
-                console.log('Selected place:', selectedPlaceRef.current);
-                console.log('Received place:', placeinfo);
     
                 if (selectedPlaceRef.current === placeinfo) {
                     try {
                         // Fetch updated vehicle data for the broadcasted place
-                        const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
-                            start: 'startSearchText',
-                            end: placeinfo,
-                        });
+                        // const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
+                        //     start: 'startSearchText',
+                        //     end: placeinfo,
+                        // });
+
+                        let vehicleResponse;
+                        if (stopFlag) {
+                            vehicleResponse = vehicles.filter(vehicle => vehicle.user_id !== receivedVehicleData.user_id);
+                        } else {
+                            vehicleResponse = [...vehicles, receivedVehicleData];
+                        }
 
 
-                        console.log('Vehicles updated after broadcast:', vehicleResponse);
+                        console.log('Vehicles updated after broadcast--->:', vehicleResponse);
 
                         
     
@@ -196,12 +200,6 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
                 const locationData = `${place}-${location.lat}-${location.lng}`;
 
-                 // Save location data to AsyncStorage
-                 await AsyncStorage.setItem('lastSearchLocation', JSON.stringify({
-                    place,
-                    locationData
-                }));
-
 
                 await onSearch(locationData);
 
@@ -220,7 +218,9 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
                 setIsSearching(true);
 
-                sendPlaceInfo(place); // Broadcast the selected place
+
+                const user_data = { name: userName, model: UserVehicleMoldel, user_id: userId , place: place, stop: false};
+                sendPlaceInfo(user_data); // Broadcast the selected place
 
 
                 
@@ -241,7 +241,6 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     const handleStopPress = async () => {
         await stopHandler();
 
-        await AsyncStorage.removeItem('lastSearchLocation');
         //clearn the vehicle data
         setVehicles([]);
         // clear the searchplace
@@ -250,7 +249,8 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
         setIsSearching(false);
 
 
-        sendPlaceInfo(selectedPlaceRef.current);  // Broadcast the selected place
+        data_to_be_sent = { name: userName, model: UserVehicleMoldel, user_id: userId , place: selectedPlaceRef.current, stop: true};
+        sendPlaceInfo(data_to_be_sent);  // Broadcast the selected place
     
         selectedPlaceRef.current = '';
 
@@ -315,7 +315,7 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
         {isSearching ? (
             <FlatList
                 data={vehicles}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => item.user_id.toString()}
                 renderItem={renderVehicleCard}
                 style={styles.vehicleList}
             />
