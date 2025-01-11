@@ -101,22 +101,18 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     useEffect(() => {
         const handlePlaceBroadcast = async (message) => {
             if (message.type === 'search_broadcast') {
-                const placeinfo = message.data.place.place;
+                const placeinfo = message.data.place;
            
-                const receivedVehicleData = message.data.place;
+                const receivedVehicleData = message.data.vehicleInfo;
                 console.log('**** broadcast received:******', receivedVehicleData);
 
 
-                const stopFlag = message.data.place.stop;
+                const stopFlag  = message.data.stopSearch;
 
     
                 if (selectedPlaceRef.current === placeinfo) {
                     try {
-                        // Fetch updated vehicle data for the broadcasted place
-                        // const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
-                        //     start: 'startSearchText',
-                        //     end: placeinfo,
-                        // });
+                    
 
                         let vehicleResponse;
                         if (stopFlag) {
@@ -132,8 +128,6 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     
                         setVehicles(vehicleResponse);
                         setIsSearching(true);
-                        // moveToMiddle();
-                        // closeSheet();
                        
                     } catch (error) {
                         console.error('Error fetching vehicles after broadcast:', error);
@@ -219,8 +213,12 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 setIsSearching(true);
 
 
-                const user_data = { name: userName, model: UserVehicleMoldel, user_id: userId , place: place, stop: false};
-                sendPlaceInfo(user_data); // Broadcast the selected place
+                // const user_data = { name: userName, model: UserVehicleMoldel, user_id: userId , place: place, stop: false};
+                // sendPlaceInfo(user_data); // Broadcast the selected place
+
+                const user_data = { name: userName, model: UserVehicleMoldel, user_id: userId };
+                sendPlaceInfo(user_data, place, false); // Send broadcast
+        
 
 
                 
@@ -249,8 +247,14 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
         setIsSearching(false);
 
 
-        data_to_be_sent = { name: userName, model: UserVehicleMoldel, user_id: userId , place: selectedPlaceRef.current, stop: true};
-        sendPlaceInfo(data_to_be_sent);  // Broadcast the selected place
+        // data_to_be_sent = { name: userName, model: UserVehicleMoldel, user_id: userId , place: selectedPlaceRef.current, stop: true};
+        // sendPlaceInfo(data_to_be_sent);  // Broadcast the selected place
+
+        const user_data = { name: userName, model: UserVehicleMoldel, user_id: userId };
+        const place = selectedPlaceRef.current;
+        sendPlaceInfo(user_data, place, true); // Send stop broadcast
+
+        
     
         selectedPlaceRef.current = '';
 

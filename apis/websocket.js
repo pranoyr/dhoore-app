@@ -75,20 +75,22 @@ export const sendMessageWebSocket = (recipientId, content, senderId) => {
 };
 
 
-export const sendPlaceInfo = (place) => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(
-            JSON.stringify({
-                type: 'search_broadcast',
-                data: {
-                    place,
-                },
-            })
-        );
-        console.log('Place info sent:', place);
-    } else {
-        console.error('WebSocket is not connected');
-    }
+export const sendPlaceInfo = (vehicleInfo, place, stopSearch) => {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(
+          JSON.stringify({
+              type: 'search_broadcast',
+              data: {
+                  vehicleInfo,
+                  place,
+                  stopSearch,
+              },
+          })
+      );
+      console.log('Place info sent:', { vehicleInfo, place, stopSearch });
+  } else {
+      console.error('WebSocket is not connected');
+  }
 };
 
 
