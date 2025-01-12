@@ -188,9 +188,6 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 selectedPlaceRef.current = place; // Update the ref with the new place
                 console.log('Updated selected place:', selectedPlaceRef.current);
 
-                // console.log('place :', place);
-
-                // console.log('lat and long:', data.result);
 
                 const locationData = `${place}-${location.lat}-${location.lng}`;
 
@@ -289,11 +286,24 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     );
 
     return (
-        <Animated.View
-    style={[styles.bottomSheet, { transform: [{ translateY }] }]}
-    {...panResponder.panHandlers}
->
-    <View style={styles.handle} />
+        <Animated.View style={[styles.bottomSheet, { transform: [{ translateY }] }]} {...panResponder.panHandlers}>
+      {/* Header Section */}
+      <View style={styles.header}>
+        <Text style={styles.title}>
+          My Trip <FontAwesome name="chevron-down" size={16} color="#fff" />
+        </Text>
+        <View style={styles.iconContainer}>
+          {/* <TouchableOpacity style={styles.icon}>
+            <FontAwesome name="share-alt" size={20} color="#fff" />
+          </TouchableOpacity> */}
+          <TouchableOpacity style={styles.icon}>
+            <FontAwesome name="user-circle" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+
+
 
     {/* Render buttons only when searching */}
     {isSearching && (
@@ -324,11 +334,15 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 style={styles.vehicleList}
             />
         ) : (
+
+         // search container
             <View style={styles.searchContainer}>
+                <FontAwesome name="search" size={18} color="#aaa" style={styles.searchIcon} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="Enter destination"
+                    placeholder="   Enter destination"
                     onFocus={() => openSheet()}
+                    placeholderTextColor="#aaa"
                     value={searchText}
                     onChangeText={(text) => {
                         setSearchText(text);
@@ -364,17 +378,6 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    bottomSheet: {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: screenHeight,
-        backgroundColor: '#191919',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        elevation: 5,
-    },
     handle: {
         width: 60,
         height: 5,
@@ -385,21 +388,6 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: 16,
-    },
-    searchContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#a9a9a9',
-        borderRadius: 12,
-        marginBottom: 10,
-        paddingHorizontal: 8,
-    },
-    searchInput: {
-        flex: 1,
-        height: 40,
-        backgroundColor: 'transparent',
-        borderRadius: 12,
-        paddingHorizontal: 8,
     },
     clearButton: {
         marginLeft: 8,
@@ -492,6 +480,83 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 20,
     },
+
+
+
+
+
+
+
+    bottomSheet: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: screenHeight,
+        backgroundColor: '#191919',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        elevation: 5,
+      },
+      header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+      },
+      title: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+      },
+      iconContainer: {
+        flexDirection: 'row',
+      },
+      icon: {
+        marginLeft: 10,
+      },
+      searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#333',
+        borderRadius: 12,
+        margin: 16,
+        paddingHorizontal: 10,
+      },
+      searchIcon: {
+        marginRight: 8,
+      },
+      searchInput: {
+        flex: 1,
+        height: 40,
+        color: '#fff',
+      },
+      placeholderContainer: {
+        alignItems: 'center',
+        marginTop: 40,
+      },
+      placeholderText: {
+        color: '#aaa',
+        fontSize: 18,
+        marginBottom: 10,
+      },
+      arrowIcon: {
+        marginTop: 10,
+      },
+      suggestion: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#444',
+      },
+      suggestionText: {
+        color: '#fff',
+        fontSize: 16,
+      },
+      suggestionsList: {
+        marginTop: 10,
+      },
    
       
       
