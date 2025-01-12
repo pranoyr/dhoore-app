@@ -114,12 +114,18 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                     try {
                     
 
-                        let vehicleResponse;
-                        if (stopFlag) {
-                            vehicleResponse = vehicles.filter(vehicle => vehicle.user_id !== receivedVehicleData.user_id);
-                        } else {
-                            vehicleResponse = [...vehicles, receivedVehicleData];
-                        }
+                        // let vehicleResponse;
+                        // if (stopFlag) {
+                        //     vehicleResponse = vehicles.filter(vehicle => vehicle.user_id !== receivedVehicleData.user_id);
+                        // } else {
+                        //     vehicleResponse = [...vehicles, receivedVehicleData];
+                        // }
+
+                        // get vehicles after broadcast from server
+                        const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
+                            start: 'startSearchText',
+                            end: placeinfo,
+                        });
 
 
                         console.log('Vehicles updated after broadcast--->:', vehicleResponse);
