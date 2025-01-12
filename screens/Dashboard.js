@@ -6,12 +6,13 @@ import HomeScreen from './HomeScreen';
 import ChatsScreen from './ChatScreen';
 import AccountScreen from './AccountScreen';
 import CustomBottomSheet from './CustomBottomSheet';
+import { FontAwesome, MaterialIcons, AntDesign } from '@expo/vector-icons'; // Import icon libraries
 
 const BottomSheetContext = createContext();
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const Dashboard = () => {
-  const [searchText, setSearchText] = useState('')
+  const [searchText, setSearchText] = useState('');
   const [stopHandler, setStopHandler] = useState(null);
   
   const Tab = createBottomTabNavigator();
@@ -28,18 +29,31 @@ const Dashboard = () => {
         <View style={styles.container}>
           {/* Navigation container */}
           <Tab.Navigator
-            screenOptions={{
+            screenOptions={({ route }) => ({
               tabBarStyle: {
                 position: 'absolute',
                 bottom: 0,
                 left: 0,
                 right: 0,
                 height: 60,
-                zIndex: 2,
-                elevation: 2,
-                backgroundColor: 'white',
+                backgroundColor: '#333', // Dark grey background
               },
-            }}
+              tabBarActiveTintColor: '#fff', // White color for active tab
+              tabBarInactiveTintColor: '#aaa', // Grey color for inactive tab
+              tabBarIcon: ({ color, size }) => {
+                let iconName;
+                if (route.name === 'Home') {
+                  iconName = 'home';
+                  return <FontAwesome name={iconName} size={size} color={color} />;
+                } else if (route.name === 'Chats') {
+                  iconName = 'chatbubble-outline';
+                  return <MaterialIcons name="chat" size={size} color={color} />;
+                } else if (route.name === 'Account') {
+                  iconName = 'user';
+                  return <AntDesign name={iconName} size={size} color={color} />;
+                }
+              },
+            })}
           >
             <Tab.Screen 
               name="Home"
@@ -48,10 +62,9 @@ const Dashboard = () => {
                   position: 'absolute',
                   bottom: 0,
                   height: 60,
-                  zIndex: 2,
-                  elevation: 2,
-                  backgroundColor: 'white',
-                }
+                  backgroundColor: '#333',
+                },
+                tabBarLabel: 'Home',
               }}
             >
               {({ route, navigation }) => (
@@ -67,8 +80,16 @@ const Dashboard = () => {
                 </>
               )}
             </Tab.Screen>
-            <Tab.Screen name="Chats" component={ChatsScreen} />
-            <Tab.Screen name="Account" component={AccountScreen} />
+            <Tab.Screen 
+              name="Chats" 
+              component={ChatsScreen} 
+              options={{ tabBarLabel: 'Chats' }} 
+            />
+            <Tab.Screen 
+              name="Account" 
+              component={AccountScreen} 
+              options={{ tabBarLabel: 'Account' }} 
+            />
           </Tab.Navigator>
         </View>
       </BottomSheetContext.Provider>

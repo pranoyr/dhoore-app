@@ -303,8 +303,6 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
       </View>
 
 
-
-
     {/* Render buttons only when searching */}
     {isSearching && (
         <View style={styles.buttonGroup}>
@@ -340,10 +338,11 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 <FontAwesome name="search" size={18} color="#aaa" style={styles.searchIcon} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="   Enter destination"
+                    placeholder="Enter destination"
                     onFocus={() => openSheet()}
                     placeholderTextColor="#aaa"
                     value={searchText}
+                    keyboardAppearance="dark"  // Dark keyboard mode
                     onChangeText={(text) => {
                         setSearchText(text);
                         fetchSuggestions(text);
@@ -363,7 +362,15 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                     </TouchableOpacity>
                 )}
             </View>
+            
         )}
+
+        {/* Placeholder Section */}
+            {searchText.length === 0 && !isSearching && (
+                <View style={styles.placeholderContainer}>
+                <Text style={styles.placeholderText}>Let's go Somewhere</Text>
+                </View>
+            )}
 
         <FlatList
             data={suggestions}
@@ -392,26 +399,17 @@ const styles = StyleSheet.create({
     clearButton: {
         marginLeft: 8,
     },
-    suggestion: {
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#444',
-    },
-    suggestionText: {
-        fontSize: 16,
-        color: '#fff',
-    },
-    searchButton: {
-        backgroundColor: '#007BFF',
-        padding: 10,
-        borderRadius: 5,
-        alignItems: 'center',
-    },
-    searchButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
+    // suggestion: {
+    //     paddingVertical: 10,
+    //     paddingHorizontal: 15,
+    //     borderBottomWidth: 1,
+    //     borderBottomColor: '#444',
+    // },
+    // suggestionText: {
+    //     fontSize: 16,
+    //     color: '#fff',
+    // },
+
     vehicleList: {
         marginTop: 20,
     },
@@ -435,12 +433,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    suggestionsList: {
-        maxHeight: 200,
-        backgroundColor: '#333',
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
+    // suggestionsList: {
+    //     maxHeight: 200,
+    //     backgroundColor: '#333',
+    //     borderRadius: 8,
+    //     overflow: 'hidden',
+    // },
     stopButton: {
         position: 'absolute',
         bottom: 20,
@@ -454,21 +452,11 @@ const styles = StyleSheet.create({
         elevation: 8,
         
     },
-
-
-    handle: {
-        width: 40,
-        height: 5,
-        backgroundColor: '#565656',
-        borderRadius: 3,
-        alignSelf: 'center',
-        marginBottom: 10,
-    },
     buttonGroup: {
         flexDirection: 'row',
         justifyContent: 'space-around',
         alignItems: 'center',
-        marginTop: 5,
+        marginTop: 15,
     },
   
     buttonText: {
