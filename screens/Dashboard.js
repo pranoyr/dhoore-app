@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   return (
     <Provider>
-      <BottomSheetContext.Provider value={{ searchText, stopHandler }}>
+      <BottomSheetContext.Provider value={{ searchText, stopHandler  }}>
         {/* Main container */}
         <View style={styles.container}>
           {/* Navigation container */}
@@ -100,6 +100,21 @@ const Dashboard = () => {
 export const useBottomSheet = () => useContext(BottomSheetContext);
 
 const styles = StyleSheet.create({
+  // container: {
+  //   flex: 1,
+  //   position: 'relative',
+  // },
+  // bottomSheetWrapper: {
+  //   position: 'absolute',
+  //   left: 0,
+  //   right: 0,
+  //   bottom: 60, // Height of the tab bar
+  //   height: SCREEN_HEIGHT * 0.9, // Adjust this value based on your bottom sheet height
+  //   zIndex: 1,
+  //   elevation: 1,
+  //   pointerEvents: 'box-none',
+  // },
+
   container: {
     flex: 1,
     position: 'relative',
@@ -108,12 +123,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 60, // Height of the tab bar
-    height: SCREEN_HEIGHT * 0.9, // Adjust this value based on your bottom sheet height
-    zIndex: 1,
-    elevation: 1,
-    pointerEvents: 'box-none',
-  },
+    bottom: 60,
+    height: SCREEN_HEIGHT * 0.9,
+    zIndex: 9999, // Increased significantly
+    elevation: 9999, // For Android
+  }
 });
 
 export default Dashboard;

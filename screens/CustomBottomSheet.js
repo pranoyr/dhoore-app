@@ -32,6 +32,7 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [vehicles, setVehicles] = useState([]); // Initialize as empty array
     const selectedPlaceRef = useRef(''); // Ref to store selected place persistently
+    
 
     const vehiclesRef = useRef([]); // Add this ref to track current vehicles
 
