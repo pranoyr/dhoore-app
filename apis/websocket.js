@@ -7,32 +7,63 @@ const listeners = []; // Store listeners for incoming messages
 // websocket.js
 let ws;
 
+let reconnectInterval = 1000; // Initial reconnect interval (1 second)
+const maxReconnectInterval = 30000; // Maximum interval (30 seconds)
+let isManuallyClosed = false;
 
-const ip_addr = "192.168.29.68"
+
+const ip_addr = "192.168.2.240"
 // const ip_addr = "16.16.68.77"
 
 const wsUrl = 'ws://'+ip_addr+':3000';
 
 
+let pingInterval;
+const pingIntervalTime = 30000; // 30 seconds
+
+const startHeartbeat = () => {
+  if (pingInterval) return;
+
+  pingInterval = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'ping' }));
+      console.log('Ping sent');
+    } else {
+      clearInterval(pingInterval);
+      pingInterval = null;
+    }
+  }, pingIntervalTime);
+};
+
+
+
 
 export const initWebSocket = (userId) => {
-    if (ws) {
-      console.log('WebSocket already initialized');
-      return;
-    }
-  
-    ws = new WebSocket(wsUrl);
-  
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-      ws.send(
-        JSON.stringify({
-          type: 'authenticate',
-          user_id: userId,
-        })
-      );
-      console.log('Authenticate message sent with user_id:', userId);
-    };
+  if (ws) {
+    console.log('WebSocket already initialized');
+    return;
+  }
+
+  connectWebSocket(userId);
+};
+
+const connectWebSocket = (userId) => {
+  ws = new WebSocket(wsUrl);
+
+  ws.onopen = () => {
+    console.log('WebSocket connected');
+    reconnectInterval = 1000; // Reset reconnect interval on successful connection
+    ws.send(
+      JSON.stringify({
+        type: 'authenticate',
+        user_id: userId,
+      })
+    );
+    console.log('Authenticate message sent with user_id:', userId);
+
+    startHeartbeat(); // Start sending pings
+  };
+
   
     ws.onmessage = (event) => {
       try {
@@ -110,6 +141,16 @@ export const addWebSocketListener = (callback) => {
       listeners.splice(index, 1);
     }
   };
+
+
+const reconnectWebSocket = (userId) => {
+  setTimeout(() => {
+    console.log(`Attempting to reconnect... (interval: ${reconnectInterval / 1000}s)`);
+    connectWebSocket(userId);
+    reconnectInterval = Math.min(reconnectInterval * 2, maxReconnectInterval); // Exponential backoff
+  }, reconnectInterval);
+};
+
 
 
 //closing

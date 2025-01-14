@@ -33,6 +33,7 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     const [vehicles, setVehicles] = useState([]); // Initialize as empty array
     const selectedPlaceRef = useRef(''); // Ref to store selected place persistently
 
+    const vehiclesRef = useRef([]); // Add this ref to track current vehicles
 
      const { userId, userName, UserVehicleMoldel } = useAppContext(); // Access values from the context
 
@@ -100,43 +101,40 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
     useEffect(() => {
         const handlePlaceBroadcast = async (message) => {
-            if (message.type === 'search_broadcast') {
-                const placeinfo = message.data.place;
-           
+            if (await message.type === 'search_broadcast') {
+                const placeinfo = await message.data.place;
                 const receivedVehicleData = message.data.vehicleInfo;
-                console.log('**** broadcast received:******', receivedVehicleData);
+                const stopFlag = message.data.stopSearch;
 
-
-                const stopFlag  = message.data.stopSearch;
-
-    
                 if (selectedPlaceRef.current === placeinfo) {
                     try {
-                    
-
-                        // let vehicleResponse;
-                        // if (stopFlag) {
-                        //     vehicleResponse = vehicles.filter(vehicle => vehicle.user_id !== receivedVehicleData.user_id);
-                        // } else {
-                        //     vehicleResponse = [...vehicles, receivedVehicleData];
-                        // }
-
-                        // get vehicles after broadcast from server
-                        const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
-                            start: 'startSearchText',
-                            end: placeinfo,
-                        });
-
-
-                        console.log('Vehicles updated after broadcast--->:', vehicleResponse);
-
+                        // Use the ref to get the current vehicles state
+                        const currentVehicles = vehiclesRef.current;
                         
-    
-                        setVehicles(vehicleResponse);
+                        let updatedVehicles;
+                        if (stopFlag) {
+                            updatedVehicles = currentVehicles.filter(
+                                vehicle => vehicle.user_id !== receivedVehicleData.user_id
+                            );
+                        } else {
+                            // Check if vehicle already exists
+                            const vehicleExists = currentVehicles.some(
+                                vehicle => vehicle.user_id === receivedVehicleData.user_id
+                            );
+                            
+                            updatedVehicles = vehicleExists 
+                                ? currentVehicles
+                                : [...currentVehicles, receivedVehicleData];
+                        }
+
+                        // Update both the ref and the state
+                        vehiclesRef.current = updatedVehicles;
+                        setVehicles(updatedVehicles);
                         setIsSearching(true);
-                       
+                        
+                        console.log('Vehicles updated after broadcast:', updatedVehicles);
                     } catch (error) {
-                        console.error('Error fetching vehicles after broadcast:', error);
+                        console.error('Error updating vehicles after broadcast:', error);
                     }
                 }
             }
@@ -209,6 +207,8 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
                
                 setVehicles(vehicleResponse);
+
+                vehiclesRef.current = vehicleResponse;
                 
                 // moveToMiddle();
                 closeSheet();

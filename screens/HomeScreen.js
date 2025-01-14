@@ -295,7 +295,7 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
       const response = await apiRequest('/api/vehicles', 'GET', null, { start: "startSearchText", end: place });
 
 
-      console.log('response:', response);
+      // console.log('response:', response);
 
 
       setVehicles(response);
