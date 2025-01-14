@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT * 0.9,
     zIndex: 9999, // Increased significantly
     elevation: 9999, // For Android
+    pointerEvents: 'box-none',
   }
 });
 
