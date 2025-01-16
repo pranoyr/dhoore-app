@@ -19,6 +19,8 @@ import { useBottomSheet } from './Dashboard';
 import apiRequest from '../apis/api';
 import { useAppContext } from './AppProvider'; // Adjust the path to your context file
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 
 import { sendPlaceInfo, addWebSocketListener, removeWebSocketListener } from '../apis/websocket';
@@ -36,7 +38,7 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
     const vehiclesRef = useRef([]); // Add this ref to track current vehicles
 
-     const { userId, userName, UserVehicleMoldel } = useAppContext(); // Access values from the context
+     const { userId, userName, UserVehicleMoldel , UserVehicleRunningStatus} = useAppContext();
 
     const { stopHandler } = useBottomSheet();
 
@@ -98,6 +100,57 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
         }).start();
         
     };
+
+
+    useEffect(() => {
+        const initiateSearchIfRunning = async () => {
+            if (UserVehicleRunningStatus === 'running') {
+
+                console.log('Vehicle status is running. Restoring search...');
+                try {
+                    console.log('Vehicle status is running. Restoring search...');
+    
+                    // Fetch the last known place (if available)
+                    const token = await AsyncStorage.getItem('token');
+                    const response = await apiRequest('/api/last-search', 'GET', null, { Authorization: `Bearer ${token}` });
+
+                    console.log("Saved place",response);
+    
+                    if (response && response.place) {
+                        const { place, lat, lng } = response;
+    
+                        selectedPlaceRef.current = place; // Update the ref with the restored place
+                        console.log('Restored place:', place);
+    
+                        const locationData = `${place}-${lat}-${lng}`;
+                        await onSearch(locationData);
+    
+                        // Fetch vehicles for the restored place
+                        const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {
+                            start: 'startSearchText',
+                            end: place,
+                        });
+    
+                        setVehicles(vehicleResponse);
+                        vehiclesRef.current = vehicleResponse; // Update the ref
+                        setIsSearching(true);
+    
+                        console.log('Search restored with vehicles:', vehicleResponse);
+                        closeSheet();
+    
+                        // Broadcast restored search info
+                        // const user_data = { name: userName, model: UserVehicleMoldel, user_id: userId };
+                        // sendPlaceInfo(user_data, place, false); // Send broadcast
+                    }
+                } catch (error) {
+                    console.error('Error restoring search on app load:', error);
+                }
+            }
+        };
+    
+        initiateSearchIfRunning(); // Call the function on component mount
+    }, [UserVehicleRunningStatus]); // Run when `UserVehicleRunningStatus` changes
+    
 
 
     useEffect(() => {
@@ -196,8 +249,8 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
                 const locationData = `${place}-${location.lat}-${location.lng}`;
 
-
                 await onSearch(locationData);
+
 
                 // Fetch vehicle data
                 const vehicleResponse = await apiRequest('/api/vehicles', 'GET', null, {

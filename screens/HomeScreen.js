@@ -285,7 +285,7 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
 
 
       // update the destination and status in the running vehicles table
-      const response1 = await apiRequest('/api/start-journey/', 'GET', null, { status: "running", destination: place });
+      const response1 = await apiRequest('/api/start-journey/', 'GET', null, { status: "running", destination: place , dest_lat: lat, dest_long: long});
       // if error occurs, show alert Not Found'
     
       
