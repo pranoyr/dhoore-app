@@ -1,6 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect  } from 'react';
 import { StyleSheet, View, Image, TouchableOpacity, TextInput, Alert, Text, Modal, Pressable } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import apiRequest from '../apis/api';
@@ -8,9 +7,10 @@ import { MaterialIcons, FontAwesome5, FontAwesome } from '@expo/vector-icons'; /
 import { useFocusEffect } from '@react-navigation/native';
 import { getDistance } from 'geolib'; // Import getDistance from geolib
 import { useBottomSheet } from './Dashboard';
-import polyline from '@mapbox/polyline';
 
+import polyline from '@mapbox/polyline'; // To decode the polyline
 
+import MapView, { Marker, Polyline } from 'react-native-maps';
 
 
 // Import your custom icons
@@ -26,6 +26,9 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
 
 
   
+
+const GOOGLE_API_KEY = 'AIzaSyCQcwTvPsjZqcP6Za10WCvvmINgk2OsV1E';
+
 
   const mapRef = useRef(null);
   const [mapKey, setMapKey] = useState(0); // Initialize the map key
@@ -44,6 +47,7 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
   const [showOnlyUserLocation, setShowOnlyUserLocation] = useState(false); // New state
   const [modalVisible, setModalVisible] = useState(false);
   const [place , setPlace] = useState('');
+  
 
   const [helpButtonVisible, setHelpButtonVisible] = useState(false); // New state for help button
 
@@ -72,9 +76,46 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
   console.log('End Search Text : ', searchText);
 
 
-  //   // Extract the actual search text (if necessary)
-  // const actualSearchText = searchText.split('-')[0]; // Extract the text before the `-`
-  // console.log('Actual Search Text:', actualSearchText);
+    useEffect(() => {
+      (async () => {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status !== 'granted') {
+              Alert.alert('Permission Denied', 'Please enable location services.');
+              return;
+          }
+
+          const { coords } = await Location.getCurrentPositionAsync({});
+          setUserLocation(coords);
+      })();
+  }, []);
+
+  const fetchDirections = async (origin, destination) => {
+    try {
+        const response = await fetch(
+            `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&key=${GOOGLE_API_KEY}`
+        );
+
+        const data = await response.json();
+
+
+        if (data.status === 'OK' && data.routes.length > 0) {
+            // Extract and decode the polyline
+            const encodedPolyline = data.routes[0].overview_polyline.points;
+            const points = polyline.decode(encodedPolyline);
+
+            // Convert the points into latitude/longitude objects
+            const route = points.map(([latitude, longitude]) => ({ latitude, longitude }));
+
+            // Save the route for rendering on the map
+            setRouteCoordinates(route);
+        } else {
+            Alert.alert('Error', 'No routes found.');
+        }
+    } catch (error) {
+        console.error('Error fetching directions:', error);
+        Alert.alert('Error', 'Failed to fetch directions.');
+    }
+};
 
 
   useEffect(() => {
@@ -263,6 +304,11 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
       const response1 = await apiRequest('/api/start-journey/', 'GET', null, { status: "running", destination: place , dest_lat: lat, dest_long: long});
       // if error occurs, show alert Not Found'
     
+
+
+      if (userLocation) {
+        await fetchDirections(userLocation, destinationCoords);
+    }
       
 
       console.log('retrieving vehicles :', place);
@@ -440,7 +486,10 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
 
     // update the destination and status in the running vehicles table
     await apiRequest('/api/stop-journey/', 'GET', null, { status: "stopped"});
-    
+
+    // Clear route coordinates
+    setRouteCoordinates([]);
+
 
 
     setShowMarkers(false);
@@ -531,30 +580,33 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
           }}
           title={vehicle.name}
           // description={`${vehicle.licensePlate} (${vehicle.status})`}
-          onPress={() => {
+            onPress={() => {
             setSelectedVehicle(vehicle);
             setModalVisible1(true);
-          }}
-        >
-          <View style={styles.customMarker}>
+            }}
+          >
+            <View style={styles.customMarker}>
             <Image
               source={vehicle.vehicleType === 'Car' ? carIcon : bikeIcon}
               style={styles.vehicleIcon}
               resizeMode="contain"
             />
-  
-          </View>
-        </Marker>
-        
-
-
+            </View>
+          </Marker>
+          ))}
           
-        ))}
-      </MapView>
-      
-      {/* <TouchableOpacity style={styles.searchIconButton} onPress={toggleSearchBars}>
-        <MaterialIcons name="more-vert" size={24} color="white" />
-      </TouchableOpacity> */}
+          {routeCoordinates.length > 0 && (
+            <Polyline
+            coordinates={routeCoordinates}
+            strokeColor="#007AFF" // Blue color
+            strokeWidth={4}
+            />
+          )}
+          </MapView>
+          
+          {/* <TouchableOpacity style={styles.searchIconButton} onPress={toggleSearchBars}>
+          <MaterialIcons name="more-vert" size={24} color="white" />
+          </TouchableOpacity> */}
       <TouchableOpacity style={styles.recenterButton} onPress={() => handleRecenter(vehicles, destinationLocation)}>
         <MaterialIcons name="my-location" size={24} color="white" />
       </TouchableOpacity>
