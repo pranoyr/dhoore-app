@@ -200,31 +200,6 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
   
   
 
-  
-
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     const fetchUserLocation = async () => {
-  //       try {
-  //         let { status } = await Location.requestForegroundPermissionsAsync();
-  //         if (status !== 'granted') {
-  //           Alert.alert('Error', 'Permission to access location was denied');
-  //           return;
-  //         }
-
-  //         let current_location = await Location.getCurrentPositionAsync({});
-  //         // setUserLocation({ latitude: 9.5, longitude: 76.4 });
-  //         setUserLocation(current_location.coords);
-  //         await updateLocationInDatabase(current_location.coords);
-  //       } catch (error) {
-  //         console.error('Error fetching user location:', error);
-  //         Alert.alert('Error', 'Failed to fetch user location');
-  //       }
-  //     };
-
-  //     fetchUserLocation();
-  //   }, [])
-  // );
 
   const updateLocationInDatabase = async (coords) => {
     try {
@@ -304,7 +279,7 @@ export default function HomeScreen({ route, navigation, registerStopHandler }) {
       setShowOnlyUserLocation(false); // Ensure vehicles are shown
       setHelpButtonVisible(true); // Hide the help button
 
-
+      
       
       if (destinationCoords) {
         setDestinationLocation(destinationCoords);

@@ -42,6 +42,9 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
     const { stopHandler } = useBottomSheet();
 
+     // Add state to track keyboard
+     const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
     const snapPoints = {
         top: 150,
         middle: screenHeight / 2 - 10,
@@ -51,55 +54,117 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
     const translateY = useRef(new Animated.Value(snapPoints.middle)).current;
     const lastTranslateY = useRef(snapPoints.bottom);
 
+    //  // Add keyboard listeners
+    //  useEffect(() => {
+    //     const keyboardDidShowListener = Keyboard.addListener(
+    //         Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+    //         () => setIsKeyboardOpen(true)
+    //     );
+    //     const keyboardDidHideListener = Keyboard.addListener(
+    //         Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+    //         () => setIsKeyboardOpen(false)
+    //     );
+
+    //     return () => {
+    //         keyboardDidShowListener.remove();
+    //         keyboardDidHideListener.remove();
+    //     };
+    // }, []);
+
+    useEffect(() => {
+        translateY.setValue(snapPoints.middle); // Initialize translateY
+        lastTranslateY.current = snapPoints.middle; // Sync lastTranslateY
+    }, []);
+    
     const panResponder = useRef(
         PanResponder.create({
-            onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
+            onStartShouldSetPanResponder: (_, gestureState) => {
+                return Math.abs(gestureState.dy) > 2; // Engage on first touch
+            },
+            onMoveShouldSetPanResponder: (_, gestureState) => {
+                return Math.abs(gestureState.dy) > 2; // Reduced threshold
+            },
             onPanResponderMove: (_, gestureState) => {
                 const newTranslateY = lastTranslateY.current + gestureState.dy;
                 if (newTranslateY >= snapPoints.top && newTranslateY <= snapPoints.bottom) {
                     translateY.setValue(newTranslateY);
                 }
+
+                 // If moving down and keyboard is open, dismiss it
+                //  if (gestureState.dy > 0) {
+                //     Keyboard.dismiss();
+                // }
             },
+            
             onPanResponderRelease: (_, gestureState) => {
+                const { dy, vy } = gestureState;
                 const currentY = translateY._value;
-                if (gestureState.dy > 0 && currentY > snapPoints.middle) {
-                    closeSheet();
-                    // close keyboard
+                const isGoingDown = vy > 0;
+
+                  // Dismiss keyboard if moving down past middle point
+                  if (isGoingDown && currentY > snapPoints.middle) {
                     Keyboard.dismiss();
-                } else if (gestureState.dy < 0 && currentY < snapPoints.middle) {
-                    openSheet();
-                } else {
-                    moveToMiddle();
                 }
-                lastTranslateY.current = translateY._value;
+    
+                let targetSnapPoint;
+                if (isGoingDown) {
+                    targetSnapPoint =
+                        currentY > snapPoints.middle + 50 ? snapPoints.bottom : snapPoints.middle;
+                } else {
+                    targetSnapPoint =
+                        currentY < snapPoints.middle - 50 ? snapPoints.top : snapPoints.middle;
+                }
+    
+                Animated.spring(translateY, {
+                    toValue: targetSnapPoint,
+                    velocity: vy,
+                    tension: 30,
+                    friction: 7,
+                    useNativeDriver: true,
+                }).start();
+    
+                lastTranslateY.current = targetSnapPoint;
             },
         })
     ).current;
-
+    
+    
     const openSheet = () => {
-        Animated.timing(translateY, {
+    
+        Animated.spring(translateY, {
             toValue: snapPoints.top,
-            duration: 300,
+            tension: 30,
+            friction: 7,
             useNativeDriver: true,
-        }).start();
+        }).start(() => {
+            lastTranslateY.current = snapPoints.top; // Sync `lastTranslateY` here
+        });
     };
-
+    
     const closeSheet = () => {
-        Animated.timing(translateY, {
+        Keyboard.dismiss();
+        Animated.spring(translateY, {
             toValue: snapPoints.bottom,
-            duration: 300,
+            tension: 30,
+            friction: 7,
             useNativeDriver: true,
-        }).start();
+        }).start(() => {
+            lastTranslateY.current = snapPoints.bottom; // Sync `lastTranslateY` here
+        });
     };
-
+    
     const moveToMiddle = () => {
-        Animated.timing(translateY, {
+        Animated.spring(translateY, {
             toValue: snapPoints.middle,
-            duration: 300,
+            tension: 30,
+            friction: 7,
             useNativeDriver: true,
-        }).start();
-        
+        }).start(() => {
+            lastTranslateY.current = snapPoints.middle; // Sync `lastTranslateY` here
+        });
     };
+    
+    
 
 
     useEffect(() => {
@@ -265,7 +330,7 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 vehiclesRef.current = vehicleResponse;
                 
                 // moveToMiddle();
-                closeSheet();
+                
 
                 setIsSearching(true);
 
@@ -275,6 +340,9 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
 
                 const user_data = { name: userName, model: UserVehicleMoldel, user_id: userId };
                 sendPlaceInfo(user_data, place, false); // Send broadcast
+
+
+                closeSheet();
         
 
 
@@ -337,9 +405,9 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 </View>
                 <TouchableOpacity
                     onPress={() => handleChatPress(item.user_id, item.name)}
-                    style={styles.chatButton}
+                    // style={styles.chatButton}
                 >
-                    <FontAwesome name="comment" size={20} color="#007BFF" />
+                    <FontAwesome name="ellipsis-v" size={20} color="#007BFF" />
                 </TouchableOpacity>
             </View>
         </View>
@@ -376,9 +444,9 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                 <Text style={styles.buttonText}>Live Share</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.button} onPress={() => console.log('My Flight')}>
-                <FontAwesome name="plane" style={styles.buttonIcon} />
-                <Text style={styles.buttonText}>My Flight</Text>
+            <TouchableOpacity style={styles.button} onPress={() => console.log('Alerts')}>
+                <FontAwesome name="bell" style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>Alerts</Text>
             </TouchableOpacity>
         </View>
     )}
@@ -404,6 +472,7 @@ const CustomBottomSheet = ({ onSearch, navigation }) => {
                     value={searchText}
                     keyboardAppearance="dark"  // Dark keyboard mode
                     onChangeText={(text) => {
+                        openSheet();
                         setSearchText(text);
                         fetchSuggestions(text);
                     }}

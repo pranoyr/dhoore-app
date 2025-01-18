@@ -88,6 +88,7 @@ export default function PersonChatScreen({ navigation, route }) {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={80}
         >
+             {/* navigation.navigate('Dashboard'); */}
             <View style={styles.chatHeader}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="white" />
@@ -127,6 +128,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 15,
         backgroundColor: '#6200ea',
+        // top: 50
     },
     chatHeaderText: {
         fontSize: 20,

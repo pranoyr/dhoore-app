@@ -12,8 +12,8 @@ const maxReconnectInterval = 30000; // Maximum interval (30 seconds)
 let isManuallyClosed = false;
 
 
-const ip_addr = "192.168.2.240"
-// const ip_addr = "16.16.68.77"
+// const ip_addr = "192.168.2.240"
+const ip_addr = "16.16.68.77"
 
 const wsUrl = 'ws://'+ip_addr+':3000';
 
